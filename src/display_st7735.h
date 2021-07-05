@@ -1,7 +1,7 @@
 #pragma once
 
 #include <TFT_eSPI.h>
-#include <displayy.h>
+#include <display.h>
 
 #define TFT_WIDTH  128 // Initial screen width (before rotation)
 #define TFT_HEIGHT 160 // Initial screen height (before rotation)
