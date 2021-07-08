@@ -67,7 +67,7 @@ def gray_16bittorgb565(shade):
     return round((r+g+b)/3)
 
 tlim = 8  # us
-res = 2500  # points
+res = 100  # points
 
 tspan = np.linspace(0, tlim, res)  # time span [us]
 
@@ -83,7 +83,7 @@ for c in range(width):
 
     for x, t in enumerate(echos):
         sspan += gen_echo(tspan, t, tlim)/(x+3)
-
+    
     # normalise
     sspan /= max(sspan)
 

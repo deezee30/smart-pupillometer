@@ -1,12 +1,8 @@
 #include "Arduino.h"
-#include "Array.h"
+#include "util/Array.h"
 
 #define IMAGE_HEIGHT 112
 #define IMAGE_WIDTH 112
-
-using Row = Array<float, IMAGE_HEIGHT>;
-using Column = Array<float, IMAGE_WIDTH>;
-using Image = Array<Row, IMAGE_WIDTH>;
 
 // TODO: Use PROGMEM
 // TODO: Use 2D array

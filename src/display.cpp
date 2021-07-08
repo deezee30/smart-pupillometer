@@ -1,12 +1,16 @@
-#include <display.h>
+#include <display.hpp>
 
-bool Display::setup(const uint16_t image[IMG_WIDTH][IMG_HEIGHT]) {
+bool Display::setup() {
     init();
     setRotation(1);
     fillScreen(colorBlack());
     setTextSize(1);
 
-    return renderFull(image, IMG_MAG);
+    return renderDefault();
+}
+
+bool Display::setup(const Image scan) {
+    return setup() & renderInner(scan, IMG_MAG);
 }
 
 bool Display::renderTitle() {
@@ -59,7 +63,7 @@ bool Display::renderRight() {
 }
 
 bool Display::renderColumn(const uint16_t col,
-                           const uint16_t scan[IMG_HEIGHT],
+                           const Column scan,
                            const uint8_t scale) {
     // Ensure column fits
     if (col >= getWidth()) return false;
@@ -71,17 +75,15 @@ bool Display::renderColumn(const uint16_t col,
         for (uint8_t rs = 0; rs < scale; rs++)
             if (scan[IMG_HEIGHT-r-1] != NULL)
                 drawPixel(SIDE_WIDTH_LEFT + col, TOP_HEIGHT + scale*r + rs,
-                          scan[IMG_HEIGHT-r-1]); // inverted view
+                          grayRGB565To16(scan[IMG_HEIGHT-r-1])); // inverted view
 
     return true;
 }
 
-bool Display::renderInner(const uint16_t scan[IMG_WIDTH][IMG_HEIGHT],
+bool Display::renderInner(const Image scan,
                           const uint8_t scale) {
     
     bool ok = true;
-
-    if (scan == NULL) return ok;
 
     // render full image by sequentially rendering each column
     for (uint16_t c = 0; c < IMG_WIDTH; c++) {

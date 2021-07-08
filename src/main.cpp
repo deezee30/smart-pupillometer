@@ -5,9 +5,9 @@
 // SRAM: 96 KB (two banks; 64 KB + 32 KB)
 
 // Includes
-#include <display_st7735.h>
-#include <image.h>
-#include <demodulator.h>
+#include <display_st7735.hpp>
+#include <image.hpp>
+#include <Streaming.h>
 
 // Loggers and debuggers
 #define DEBUG true    // keep false unless debugging
@@ -48,7 +48,7 @@ uint32_t stopTimer(); // stops timing an operation (used for debugging)
 DisplayST7735 display = DisplayST7735(US_MHZ); // create TFT ST7735 display instance
 uint32_t last_millis;  // used for timing heavy operations (for single-threaded use only)
 uint16_t current_col = 0; // current scanning column
-//uint16_t **image_565;
+Image image_565;
 
 /**
  * Initialisation
@@ -57,12 +57,22 @@ void setup() {
     // Init Serial and wait to connect
     Serial.begin(115200);
     while (!Serial);
-    Serial.println();
+    Serial << endl;
 
-    display.setup(); // set up display and show initial image
+    //display.setup(); // set up display and show initial image
 
-    //static const float echos[] = {0, 1.3, 3.2, 3.8, 5, 6, 7};  // microseconds
-    //image_565 = Demodulator::generateBScan(echos, 7);
+    //////// TODO: TESTING ////////
+    float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
+    Array<float, 7> echos(e);
+
+    image_565 = Demodulator::generateBScan(echos);
+    for (uint16_t x = 0; x < image_565.size(); x++) {
+        Serial << x << F(": ") << image_565[x] << endl;
+    }
+
+    display.setup(image_565);
+
+    Serial << F("Setup finished.") << endl;
 
     delay(50); // post-setup settling time
 }
@@ -72,10 +82,16 @@ void setup() {
  */
 void loop() {
 
-    // Perform column scan
-    display.renderColumn(current_col, image[current_col++]);
+    // TODO: Remove
+    while (true);
 
-    if (current_col == IMG_WIDTH) {
+    // Disable scanning while paused
+    while (digitalRead(PIN_IN_SLEEP) == HIGH) ;
+
+    // Perform column scan
+    display.renderColumn(current_col, image[current_col]);
+
+    if (++current_col == IMG_WIDTH) {
         // TODO: Remove
         while (true);
 
@@ -89,7 +105,7 @@ void loop() {
  * Initiates timer for heavy tasks if timing feature is enabled.
  */
 void startTimer() {
-    Serial.println(F("Working..."));
+    Serial << F("Working...") << endl;
 #if TIMING
     last_millis = millis();
 #endif
@@ -102,9 +118,7 @@ uint32_t stopTimer() {
 #if TIMING
     uint32_t work = millis() - last_millis;
 
-    Serial.print(F("Done in "));
-    Serial.print(work);
-    Serial.println(F(" ms."));
+    Serial << F("Done in ") << work << F(" ms.");
 
     return work;
 #else

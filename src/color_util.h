@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Arduino.h"
-
 class ColorUtil {
    public:
     uint16_t grayRGB565To16(const uint8_t shade) {

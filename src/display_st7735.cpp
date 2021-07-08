@@ -1,4 +1,4 @@
-#include <display_st7735.h>
+#include <display_st7735.hpp>
 
 uint16_t DisplayST7735::getHeight()                         { return tft.height(); }
 uint16_t DisplayST7735::getWidth()                          { return tft.width(); }
