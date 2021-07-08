@@ -6,7 +6,6 @@
 
 // Includes
 #include "display/display_st7735.hpp"
-#include <image.hpp>
 #include <Streaming.h>
 #include "util/timer.hpp"
 
