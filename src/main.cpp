@@ -8,10 +8,10 @@
 #include <display_st7735.hpp>
 #include <image.hpp>
 #include <Streaming.h>
+#include <timer.hpp>
 
 // Loggers and debuggers
 #define DEBUG true    // keep false unless debugging
-#define TIMING true   // records and prints timing of heavy operations
 
 // SPI TFT Display Pins
                         // TFT 1 Vcc -> Arduino Due +3.3V - Power
@@ -40,15 +40,12 @@
 // Options (Left Sidebar)
 #define US_MHZ           5  // Ultrasound probe operational frequency [MHz]
 
-// Internal function declarations
-void startTimer();    // starts timing an operation (used for debugging)
-uint32_t stopTimer(); // stops timing an operation (used for debugging)
-
 // Variables for internal use
 DisplayST7735 display = DisplayST7735(US_MHZ); // create TFT ST7735 display instance
-uint32_t last_millis;  // used for timing heavy operations (for single-threaded use only)
 uint16_t current_col = 0; // current scanning column
-Image image_565;
+//Image image_565;
+
+const float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
 
 /**
  * Initialisation
@@ -62,15 +59,12 @@ void setup() {
     //display.setup(); // set up display and show initial image
 
     //////// TODO: TESTING ////////
-    float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
-    Array<float, 7> echos(e);
+    //Array<float, 7> echos(e);
+    //image_565 = Demodulator::generateBScan(echos);
 
-    image_565 = Demodulator::generateBScan(echos);
-    for (uint16_t x = 0; x < image_565.size(); x++) {
-        Serial << x << F(": ") << image_565[x] << endl;
-    }
+    //display.setup(image_565);
 
-    display.setup(image_565);
+    display.setup();
 
     Serial << F("Setup finished.") << endl;
 
@@ -82,46 +76,15 @@ void setup() {
  */
 void loop() {
 
-    // TODO: Remove
-    while (true);
-
     // Disable scanning while paused
     while (digitalRead(PIN_IN_SLEEP) == HIGH) ;
 
     // Perform column scan
-    display.renderColumn(current_col, image[current_col]);
+    display.renderColumn(current_col, Demodulator::generateAScan(Array<float, 7>(e), current_col));
 
     if (++current_col == IMG_WIDTH) {
-        // TODO: Remove
-        while (true);
-
         current_col = 0;
         // TODO: Remove when new data comes in
-        display.clearInner();
+        //display.clearInner();
     }
-}
-
-/**
- * Initiates timer for heavy tasks if timing feature is enabled.
- */
-void startTimer() {
-    Serial << F("Working...") << endl;
-#if TIMING
-    last_millis = millis();
-#endif
-}
-
-/**
- * Stops timer after heavy tasks and prints timing if timing feature is enabled.
- */
-uint32_t stopTimer() {
-#if TIMING
-    uint32_t work = millis() - last_millis;
-
-    Serial << F("Done in ") << work << F(" ms.");
-
-    return work;
-#else
-    return 0L;
-#endif
 }

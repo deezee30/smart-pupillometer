@@ -62,6 +62,7 @@ bool Display::renderRight() {
     return true;
 }
 
+//TODO: Move scaling to renderColumn() because it breaks when not used properly
 bool Display::renderColumn(const uint16_t col,
                            const Column scan,
                            const uint8_t scale) {
@@ -73,13 +74,13 @@ bool Display::renderColumn(const uint16_t col,
     // Conventional rendering
     for (uint16_t r = 0; r < IMG_HEIGHT; r++)
         for (uint8_t rs = 0; rs < scale; rs++)
-            if (scan[IMG_HEIGHT-r-1] != NULL)
-                drawPixel(SIDE_WIDTH_LEFT + col, TOP_HEIGHT + scale*r + rs,
-                          grayRGB565To16(scan[IMG_HEIGHT-r-1])); // inverted view
+            drawPixel(SIDE_WIDTH_LEFT + col, TOP_HEIGHT + scale*r + rs,
+                      grayRGB565To16(scan[IMG_HEIGHT-r-1])); // inverted view
 
     return true;
 }
 
+//TODO: Move scaling to renderColumn() because it breaks when not used properly
 bool Display::renderInner(const Image scan,
                           const uint8_t scale) {
     

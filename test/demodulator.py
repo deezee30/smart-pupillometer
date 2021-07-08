@@ -11,7 +11,7 @@ def gen_echo(t, h, tlim):
 
     k = 0.2  # min signal
     A = rand.uniform(0.2, 0.6) # amplitude (random)
-    #A = 0.4
+    A = 0.4
     sin = np.sin(40*t)  # sinusoidal component
     sin_decay = A*np.sin((t-h-0.5)/0.115)/(t-h-0.5) + k # sinusoidal decay component
     exp_decay = np.exp(3*(A-t)+3*h) + k  # exponential decay component
@@ -67,7 +67,7 @@ def gray_16bittorgb565(shade):
     return round((r+g+b)/3)
 
 tlim = 8  # us
-res = 100  # points
+res = 250  # points
 
 tspan = np.linspace(0, tlim, res)  # time span [us]
 
