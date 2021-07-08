@@ -5,10 +5,10 @@
 // SRAM: 96 KB (two banks; 64 KB + 32 KB)
 
 // Includes
-#include <display_st7735.hpp>
+#include "display/display_st7735.hpp"
 #include <image.hpp>
 #include <Streaming.h>
-#include <timer.hpp>
+#include "util/timer.hpp"
 
 // Loggers and debuggers
 #define DEBUG true    // keep false unless debugging

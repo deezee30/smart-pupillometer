@@ -1,8 +1,8 @@
 #pragma once
 
 // Includes
-#include <color_util.h>
-#include <demodulator.hpp>
+#include "../color_util.h"
+#include "../demodulator.hpp"
 
 #define IMG_MAG             1   // Linear amplification of image
 

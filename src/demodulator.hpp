@@ -3,8 +3,8 @@
 #include <Arduino.h>
 #include <Streaming.h>
 #include "util/Array.h"
+#include "util/timer.hpp"
 #include "color_util.h"
-#include "timer.hpp"
 
 #define IMG_WIDTH  112 // width after rotation - lateral resolution (# pixels in a row)
 #define IMG_HEIGHT 112 // height after rotation - longitudinal resolution (# pixels in column)
