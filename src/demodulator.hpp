@@ -137,7 +137,6 @@ class Demodulator {
 
         // Downsample into display size
         // Downsampling currently is done on natural envelope instead of smooth to preserve accuracy.
-        //const Array<uint16_t, res> peaks_ds = downsample(peaks, n_rows);
         const Array<float, res> envelope_ds = downsample(envelope, n_rows);
 
         // Convert to RGB565 shade of grey (8-bit) for better storage and faster processing
@@ -145,7 +144,7 @@ class Demodulator {
             scan_565.push_back(round(envelope_ds[i]*255));
         
         uint32_t ms = timer.stop();
-        Serial << col << F(": ") << ms << F(" ms") << endl;
+        //Serial << col << F(": ") << ms << F(" ms") << endl;
 
         return scan_565;
     }
@@ -160,21 +159,18 @@ class Demodulator {
         // stored and processed transposed for easy column extraction
         Image image_565; // rgb565 format
 
-        // Record time and show progress
+        // Record time
         Timer timer;
         timer.start();
-        //Serial << '[';
 
         for (uint16_t col = 0; col < n_cols; col++) {
             Column column = generateAScan(echos, col, n_rows);
 
             // Append single column of a B-mode image
             image_565.push_back(column);
-            //Serial << '.';
         }
 
         uint32_t ms = timer.stop();
-        //Serial << F("] (") << ms << F(" ms)") << endl;
 
         // return rgb565 format
         return image_565;

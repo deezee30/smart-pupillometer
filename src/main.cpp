@@ -39,11 +39,17 @@
 
 // Options (Left Sidebar)
 #define US_MHZ           10 // Ultrasound probe operational frequency [MHz]
-#define IMG_MAG          4  // Linear amplification of image
+#define IMG_MAG          8  // Linear amplification of image
 
 // Variables for internal use
 DisplayST7735 display(US_MHZ, IMG_MAG); // create TFT ST7735 display instance
 uint16_t current_col = 0; // current scanning column
+uint16_t total_cols = display.getColumns();
+
+// Scanning timing
+Timer scan_timer;
+uint16_t scan_time = 0;
+uint16_t scan_time_n = 0;
 
 static const float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
 static const Array<float, 7> echos(e);
@@ -59,7 +65,9 @@ void setup() {
 
     display.setup();
 
+#if DEBUG
     Serial << F("Setup finished.") << endl;
+#endif
 
     delay(50); // post-setup settling time
 }
@@ -69,14 +77,35 @@ void setup() {
  */
 void loop() {
 
-    // Disable scanning while paused
+    // TODO: Disable scanning while paused
     while (digitalRead(PIN_IN_SLEEP) == HIGH) ;
 
     // Perform column scan
+    scan_timer.start(); // start timer
     Column scan = Demodulator::generateAScan(echos, current_col, display.getRows());
     display.renderColumn(current_col, scan);
+    scan_time += scan_timer.stop(); // stop timer and save
+    scan_time_n++;
 
-    if (++current_col == display.getColumns()) {
+    // Average out timer and output progress
+    if (current_col == 0) {
+        scan_time = 0;
+        scan_time_n = 0;
+#if DEBUG
+        Serial << F("Rendering ") << total_cols << F(" scans.") << endl;
+#endif
+    } else if ((current_col+1) % round(total_cols/5) == 0 ||  // progress
+                current_col+1 == total_cols) {                // end
+#if DEBUG
+        Serial << F("Rendered ") << current_col+1 << F("/") << total_cols << F(" scans (")
+               << 100*(current_col+1)/total_cols << F("%) in ") << scan_time
+               << F(" ms (~") << scan_time/scan_time_n << F(" ms/col).") << endl;
+#endif
+        scan_time = 0;
+        scan_time_n = 0;
+    }
+
+    if (++current_col == total_cols) {
         current_col = 0;
         // TODO: Remove when new data comes in
         //display.clearInner();

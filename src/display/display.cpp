@@ -28,7 +28,7 @@ bool Display::renderLeft() {
     int16_t pad1 = print(1, TOP_HEIGHT+10, us_freq_);
     print(pad1, TOP_HEIGHT+10, F(" M"));
     int16_t pad2 = print(1, TOP_HEIGHT+10+pad1, image_scale_);
-    print(pad2, TOP_HEIGHT+16+pad2, F("x"));
+    print(pad2+1, TOP_HEIGHT+16+pad2, F("x"));
 
     return true;
 }

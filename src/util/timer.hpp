@@ -25,7 +25,7 @@ class Timer {
     inline uint32_t stop(bool msg = false) {
         uint32_t work = millis() - last_millis;
 #if TIMING
-        if (msg) Serial << F("Done in ") << work << F(" ms.");
+        if (msg) Serial << F("Done in ") << work << F(" ms.") << endl;
 #endif
         return work;
     }
