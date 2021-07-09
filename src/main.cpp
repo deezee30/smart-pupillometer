@@ -5,6 +5,7 @@
 // SRAM: 96 KB (two banks; 64 KB + 32 KB)
 
 // Includes
+#include "display/screen.hpp"
 #include "display/display_st7735.hpp"
 #include <Streaming.h>
 #include "util/timer.hpp"
@@ -37,16 +38,15 @@
 #define PIN_IN_SLEEP     3  // Switch input for sleep mode
 
 // Options (Left Sidebar)
-#define US_MHZ           5  // Ultrasound probe operational frequency [MHz]
+#define US_MHZ           10 // Ultrasound probe operational frequency [MHz]
+#define IMG_MAG          4  // Linear amplification of image
 
 // Variables for internal use
-DisplayST7735 display = DisplayST7735(US_MHZ); // create TFT ST7735 display instance
+DisplayST7735 display(US_MHZ, IMG_MAG); // create TFT ST7735 display instance
 uint16_t current_col = 0; // current scanning column
-//Image image_565;
 
-static const Array<float, res> tspan = Demodulator::linspace<res>(0, tlim); // time span [us]
-
-const float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
+static const float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
+static const Array<float, 7> echos(e);
 
 /**
  * Initialisation
@@ -56,14 +56,6 @@ void setup() {
     Serial.begin(115200);
     while (!Serial);
     Serial << endl;
-
-    //display.setup(); // set up display and show initial image
-
-    //////// TODO: TESTING ////////
-    //Array<float, 7> echos(e);
-    //image_565 = Demodulator::generateBScan(echos);
-
-    //display.setup(image_565);
 
     display.setup();
 
@@ -81,9 +73,10 @@ void loop() {
     while (digitalRead(PIN_IN_SLEEP) == HIGH) ;
 
     // Perform column scan
-    display.renderColumn(current_col, Demodulator::generateAScan(Array<float, 7>(e), current_col));
+    Column scan = Demodulator::generateAScan(echos, current_col, display.getRows());
+    display.renderColumn(current_col, scan);
 
-    if (++current_col == IMG_WIDTH) {
+    if (++current_col == display.getColumns()) {
         current_col = 0;
         // TODO: Remove when new data comes in
         //display.clearInner();

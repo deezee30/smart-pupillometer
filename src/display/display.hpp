@@ -4,12 +4,6 @@
 #include "../color_util.h"
 #include "../demodulator.hpp"
 
-#define IMG_MAG             1   // Linear amplification of image
-
-#define TOP_HEIGHT          16
-#define SIDE_WIDTH_LEFT     28
-#define SIDE_WIDTH_RIGHT    20
-
 // View
 
 // Scalebar (Right Sidebar)
@@ -20,15 +14,26 @@
 
 class Display : public ColorUtil {
    protected:
-    uint8_t us_freq; // MHz
+    uint8_t us_freq_;
+    uint8_t image_scale_;
+    uint16_t image_rows_;
+    uint16_t image_cols_;
 
    public:
-    Display(const uint8_t us_freq)
-        : us_freq(us_freq) {}
+    Display(const uint8_t us_freq,
+            const uint8_t image_scale = DEFAULT_IMAGE_SCALE)
+        : us_freq_(us_freq)
+        , image_scale_(image_scale)
+        , image_rows_(IMG_HEIGHT/image_scale)
+        , image_cols_(IMG_WIDTH/image_scale) {}
 
     ~Display() {
         
     }
+
+    uint16_t getRows()      { return image_rows_; }
+    uint16_t getColumns()   { return image_cols_; }
+    uint8_t getImageScale() { return image_scale_; }
 
     bool setup();
 
@@ -40,12 +45,10 @@ class Display : public ColorUtil {
 
     bool renderRight();
 
-    bool renderInner(const Image scan,
-                     const uint8_t scale = IMG_MAG);
+    bool renderInner(const Image scan);
 
     bool renderColumn(uint16_t col,
-                      const Column scan,
-                      const uint8_t scale = IMG_MAG);
+                      const Column scan);
     
     bool renderDefault() {
         return renderTitle()    // Draw heading: Title

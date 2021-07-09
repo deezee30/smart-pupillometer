@@ -4,19 +4,13 @@
 #include <Streaming.h>
 #include "util/Array.h"
 #include "util/timer.hpp"
-#include "color_util.h"
-
-#define IMG_WIDTH  112 // width after rotation - lateral resolution (# pixels in a row)
-#define IMG_HEIGHT 112 // height after rotation - longitudinal resolution (# pixels in column)
-
-using Row = Array<uint8_t, IMG_HEIGHT>;
-using Column = Array<uint8_t, IMG_WIDTH>;
-using Image = Array<Row, IMG_WIDTH>;
+#include "display/screen.hpp"
 
 static const uint8_t tlim = 8;     // us
 static const uint16_t res = 250;  // points
 
 // TODO: Optimise class
+// One idea: Generate waveforms at setup
 class Demodulator {
 
    public:
@@ -99,7 +93,8 @@ class Demodulator {
     // TODO: Optimise
     template <size_t N>
     static Column generateAScan(const Array<float, N> echos,
-                                uint16_t col) {
+                                uint16_t col,
+                                const uint16_t n_rows = IMG_HEIGHT) {
         // Record time
         Timer timer;
         timer.start();
@@ -142,24 +137,24 @@ class Demodulator {
 
         // Downsample into display size
         // Downsampling currently is done on natural envelope instead of smooth to preserve accuracy.
-        //const Array<uint16_t, res> peaks_ds = downsample<uint16_t>(peaks, IMG_HEIGHT);
-        const Array<float, res> envelope_ds = downsample(envelope, IMG_HEIGHT);
-
-        // TODO: Display the first scan pulse-echo
+        //const Array<uint16_t, res> peaks_ds = downsample(peaks, n_rows);
+        const Array<float, res> envelope_ds = downsample(envelope, n_rows);
 
         // Convert to RGB565 shade of grey (8-bit) for better storage and faster processing
-        for (uint16_t i = 0; i < IMG_HEIGHT; i++)
-            scan_565.push_back(min(round(envelope_ds[i]*255), 255));
+        for (uint16_t i = 0; i < n_rows; i++)
+            scan_565.push_back(round(envelope_ds[i]*255));
         
         uint32_t ms = timer.stop();
-        //Serial << col << F(": ") << ms << F(" ms") << endl;
+        Serial << col << F(": ") << ms << F(" ms") << endl;
 
         return scan_565;
     }
 
     // TODO: Optimise
     template <size_t N>
-    static Image generateBScan(const Array<float, N> echos) {
+    static Image generateBScan(const Array<float, N> echos,
+                               const uint16_t n_rows = IMG_HEIGHT,
+                               const uint16_t n_cols = IMG_WIDTH) {
         static const Array<float, res> tspan = linspace<res>(0, tlim); // time span [us]
 
         // stored and processed transposed for easy column extraction
@@ -170,8 +165,8 @@ class Demodulator {
         timer.start();
         //Serial << '[';
 
-        for (uint16_t col = 0; col < IMG_WIDTH; col++) {
-            Column column = generateAScan(echos, col, tspan);
+        for (uint16_t col = 0; col < n_cols; col++) {
+            Column column = generateAScan(echos, col, n_rows);
 
             // Append single column of a B-mode image
             image_565.push_back(column);
@@ -180,8 +175,6 @@ class Demodulator {
 
         uint32_t ms = timer.stop();
         //Serial << F("] (") << ms << F(" ms)") << endl;
-
-        // TODO: Show (transposed) image
 
         // return rgb565 format
         return image_565;

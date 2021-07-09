@@ -10,7 +10,7 @@ bool Display::setup() {
 }
 
 bool Display::setup(const Image scan) {
-    return setup() & renderInner(scan, IMG_MAG);
+    return setup() & renderInner(scan);
 }
 
 bool Display::renderTitle() {
@@ -25,8 +25,10 @@ bool Display::renderTitle() {
 bool Display::renderLeft() {
     setTextFont(fontContent());
     setTextColor(colorScale());
-    int16_t pad = print(1, TOP_HEIGHT+10, us_freq);
-    print(2 + pad, TOP_HEIGHT+10, F("MHz"));
+    int16_t pad1 = print(1, TOP_HEIGHT+10, us_freq_);
+    print(pad1, TOP_HEIGHT+10, F(" M"));
+    int16_t pad2 = print(1, TOP_HEIGHT+10+pad1, image_scale_);
+    print(pad2, TOP_HEIGHT+16+pad2, F("x"));
 
     return true;
 }
@@ -63,32 +65,30 @@ bool Display::renderRight() {
 }
 
 bool Display::renderColumn(const uint16_t c,
-                           const Column scan,
-                           const uint8_t scale) {
+                           const Column scan) {
     // Ensure column fits
     if (c >= getWidth()) return false;
 
     // TODO: Draw entire col at once (e.g. as a bmp/sprite)
     
     // Conventional rendering
-    for (uint16_t cs = 0; cs < scale; cs++)
-        for (uint16_t r = 0; r < IMG_HEIGHT; r++)
-            for (uint8_t rs = 0; rs < scale; rs++)
-                drawPixel(SIDE_WIDTH_LEFT + scale*c + cs, // scaled, padded column
-                          TOP_HEIGHT      + scale*r + rs, // scaled, padded row
-                          grayRGB565To16(scan[IMG_HEIGHT-r-1])); // inverted view
+    for (uint16_t cs = 0; cs < image_scale_; cs++)
+        for (uint16_t r = 0; r < image_rows_; r++)
+            for (uint8_t rs = 0; rs < image_scale_; rs++)
+                drawPixel(SIDE_WIDTH_LEFT + image_scale_*c + cs,  // scaled, padded column
+                          TOP_HEIGHT      + image_scale_*r + rs,  // scaled, padded row
+                          grayRGB565To16(scan[image_rows_-r-1])); // inverted view
 
     return true;
 }
 
-bool Display::renderInner(const Image scan,
-                          const uint8_t scale) {
+bool Display::renderInner(const Image scan) {
     
     bool ok = true;
 
     // render full image by sequentially rendering each column
-    for (uint16_t c = 0; c < IMG_WIDTH; c++) {
-        bool _ok = renderColumn(c, scan[c], scale);
+    for (uint16_t c = 0; c < image_cols_; c++) {
+        bool _ok = renderColumn(c, scan[c]);
         if (ok) ok = _ok; // record unsuccessful commands
     }
     

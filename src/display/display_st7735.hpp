@@ -3,9 +3,8 @@
 #include <TFT_eSPI.h>
 #include "display.hpp"
 
-#define TFT_WIDTH  128 // Initial screen width (before rotation)
-#define TFT_HEIGHT 160 // Initial screen height (before rotation)
-
+#define TFT_HEIGHT  SCREEN_HEIGHT
+#define TFT_WIDTH   SCREEN_WIDTH
 #define SCALE_COLOR TFT_GOLD
 
 class DisplayST7735 : public Display {
@@ -13,8 +12,9 @@ class DisplayST7735 : public Display {
    public:
     TFT_eSPI tft;
 
-    DisplayST7735(const uint8_t us_frequency_mhz)
-        : Display(us_frequency_mhz)  // ultrasound operating frequency
+    DisplayST7735(const uint8_t us_frequency_mhz,
+                  const uint8_t image_scale = DEFAULT_IMAGE_SCALE)
+        : Display(us_frequency_mhz, image_scale)
         , tft(TFT_eSPI(TFT_WIDTH, TFT_HEIGHT)) { // invoke library; pins defined in User_Setup
     }
 
