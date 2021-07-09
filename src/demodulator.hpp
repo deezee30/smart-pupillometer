@@ -57,12 +57,6 @@ class Demodulator {
         return peak_idxs;
     }
 
-    // Friday:
-    // TODO: Also, email Kozlov about cow eye, progress and component form. Update component list.
-    // TODO: Respond to Shusei email and fill out the form.
-    // TODO: Next steps with ultrasound probe
-    // TODO: Overleaf + introduction
-    // TODO: Natwest
     template <size_t N>
     static Array<float, N> generateEcho(const Array<float, N> tspan,
                                         const uint16_t t,
@@ -104,7 +98,12 @@ class Demodulator {
 
     // TODO: Optimise
     template <size_t N>
-    static Column generateAScan(const Array<float, N> echos, uint16_t col) {
+    static Column generateAScan(const Array<float, N> echos,
+                                uint16_t col) {
+        // Record time
+        Timer timer;
+        timer.start();
+
         static const Array<float, res> tspan = linspace<res>(0, tlim); // time span [us]
 
         Column scan_565; // rgb565 format
@@ -150,7 +149,10 @@ class Demodulator {
 
         // Convert to RGB565 shade of grey (8-bit) for better storage and faster processing
         for (uint16_t i = 0; i < IMG_HEIGHT; i++)
-            scan_565.push_back(round(envelope_ds[i]*255));
+            scan_565.push_back(min(round(envelope_ds[i]*255), 255));
+        
+        uint32_t ms = timer.stop();
+        //Serial << col << F(": ") << ms << F(" ms") << endl;
 
         return scan_565;
     }
@@ -169,7 +171,7 @@ class Demodulator {
         //Serial << '[';
 
         for (uint16_t col = 0; col < IMG_WIDTH; col++) {
-            Column column = generateAScan(echos, col);
+            Column column = generateAScan(echos, col, tspan);
 
             // Append single column of a B-mode image
             image_565.push_back(column);

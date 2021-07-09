@@ -62,25 +62,25 @@ bool Display::renderRight() {
     return true;
 }
 
-//TODO: Move scaling to renderColumn() because it breaks when not used properly
-bool Display::renderColumn(const uint16_t col,
+bool Display::renderColumn(const uint16_t c,
                            const Column scan,
                            const uint8_t scale) {
     // Ensure column fits
-    if (col >= getWidth()) return false;
+    if (c >= getWidth()) return false;
 
     // TODO: Draw entire col at once (e.g. as a bmp/sprite)
     
     // Conventional rendering
-    for (uint16_t r = 0; r < IMG_HEIGHT; r++)
-        for (uint8_t rs = 0; rs < scale; rs++)
-            drawPixel(SIDE_WIDTH_LEFT + col, TOP_HEIGHT + scale*r + rs,
-                      grayRGB565To16(scan[IMG_HEIGHT-r-1])); // inverted view
+    for (uint16_t cs = 0; cs < scale; cs++)
+        for (uint16_t r = 0; r < IMG_HEIGHT; r++)
+            for (uint8_t rs = 0; rs < scale; rs++)
+                drawPixel(SIDE_WIDTH_LEFT + scale*c + cs, // scaled, padded column
+                          TOP_HEIGHT      + scale*r + rs, // scaled, padded row
+                          grayRGB565To16(scan[IMG_HEIGHT-r-1])); // inverted view
 
     return true;
 }
 
-//TODO: Move scaling to renderColumn() because it breaks when not used properly
 bool Display::renderInner(const Image scan,
                           const uint8_t scale) {
     
@@ -88,10 +88,8 @@ bool Display::renderInner(const Image scan,
 
     // render full image by sequentially rendering each column
     for (uint16_t c = 0; c < IMG_WIDTH; c++) {
-        for (uint8_t cs = 0; cs < scale; cs++) {
-            bool _ok = renderColumn(scale*c + cs, scan[c], scale);
-            if (ok) ok = _ok; // record unsuccessful commands
-        }
+        bool _ok = renderColumn(c, scan[c], scale);
+        if (ok) ok = _ok; // record unsuccessful commands
     }
     
     return ok;

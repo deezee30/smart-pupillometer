@@ -44,6 +44,8 @@ DisplayST7735 display = DisplayST7735(US_MHZ); // create TFT ST7735 display inst
 uint16_t current_col = 0; // current scanning column
 //Image image_565;
 
+static const Array<float, res> tspan = Demodulator::linspace<res>(0, tlim); // time span [us]
+
 const float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
 
 /**
