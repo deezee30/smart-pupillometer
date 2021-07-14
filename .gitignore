@@ -4,3 +4,7 @@ archive
 lib/README
 include/README
 test/README
+pupil_detection/recordings
+pupil_detection/output.avi
+pupil_detection/video.mp4
+pupil_detection/video3.mp4
