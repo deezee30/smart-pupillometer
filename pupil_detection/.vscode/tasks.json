@@ -1,0 +1,42 @@
+{
+	"version": "2.0.0",
+	"tasks": [{
+		//"type": "cppbuild",
+		"type": "shell",
+		"label": "C/C++: g++.exe build active file",
+		"command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+		"args": [
+			"--std", "c++17",
+			"-g", "${file}",
+			"-o", "${fileDirname}\\pupil_detector.exe",
+			"-I", "C:\\lib\\OpenCV-MinGW-Build\\include",
+			"-L", "C:\\lib\\OpenCV-MinGW-Build\\x64\\mingw\\bin",
+			"-llibopencv_calib3d452",
+			"-llibopencv_core452",
+			"-llibopencv_dnn452",
+			"-llibopencv_features2d452",
+			"-llibopencv_flann452",
+			"-llibopencv_highgui452",
+			"-llibopencv_imgcodecs452",
+			"-llibopencv_imgproc452",
+			"-llibopencv_ml452",
+			"-llibopencv_objdetect452",
+			"-llibopencv_photo452",
+			"-llibopencv_stitching452",
+			"-llibopencv_video452",
+			"-llibopencv_videoio452"
+		],
+		"options": {
+			//"cwd": "${fileDirname}"
+			"cwd": "C:\\msys64\\mingw64\\bin"
+		},
+		"problemMatcher": [
+			"$gcc"
+		],
+		"group": {
+			"kind": "build",
+			"isDefault": true
+		},
+		"detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+	}]
+}
