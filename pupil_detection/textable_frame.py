@@ -20,18 +20,18 @@ class TextableFrame(object):
         self.text_margin = TEXT_MARGIN if text_margin == None else text_margin
         self.text_lines  = np.zeros(4) if text_lines  == None else text_lines
     
-    def add_text(self, pos, text, col = (255, 255, 255)):
-        self.text_lines[pos] += 1
+    def add_text(self, pos, text, col = (255, 255, 255)):        
+        if type(pos) == tuple:
+            org = pos
+        else:
+            self.text_lines[pos] += 1
 
-        x_off = int(self.frame.shape[1] - 130)
-        y_off = self.text_margin * self.text_lines[pos]
+            x_off = int(self.frame.shape[1] - 130)
+            y_off = self.text_margin * self.text_lines[pos]
 
-        x = x_off if (pos == TOP_RIGHT or pos == BOTTOM_RIGHT) else self.text_margin
-        y = y_off if (pos == TOP_LEFT  or pos == TOP_RIGHT)    else self.frame.shape[0] - y_off
+            x = x_off if (pos == TOP_RIGHT or pos == BOTTOM_RIGHT) else self.text_margin
+            y = y_off if (pos == TOP_LEFT  or pos == TOP_RIGHT)    else self.frame.shape[0] - y_off
 
-        cv2.putText(self.frame,
-                    text = text,
-                    org = (int(x), int(y)),
-                    fontFace = TEXT_FONT_FACE,
-                    fontScale = TEXT_FONT_SIZE,
-                    color = col)
+            org = (int(x), int(y))
+        
+        cv2.putText(self.frame, text, org, TEXT_FONT_FACE, TEXT_FONT_SIZE, col)

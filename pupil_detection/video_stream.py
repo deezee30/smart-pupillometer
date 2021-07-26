@@ -4,7 +4,6 @@ import util
 import textable_frame as frame
 from collections import deque
 from threading import Thread
-import time
 
 # Constants
 MONITOR_FRAMES  = 50               # no. of frames to monitor for FPS calculation
@@ -91,11 +90,13 @@ class VideoStream(object):
         # Await until read is successful
         while not self.frame_ok: continue
 
+        # Rendering FPS
+        self.fps_render = 0 if len(self.q) == 0 else np.mean(self.q)
+
         # Zoom
         roi_z = self.frame[self.zoom_y:self.zoom_y+self.height,
                            self.zoom_x:self.zoom_x+self.width] # region of image
-        
-        roi = roi_z.copy() # create a copy not tied to fx
+        roi = roi_z.copy() # create a copy not tied to post-processing
         
         # Compute and render a bounding focus box
         alpha = 0.4
@@ -106,18 +107,6 @@ class VideoStream(object):
             roi[y0:y1, x0:x1] = cv2.addWeighted(roi_sub, 1-alpha, roi_cover, alpha, 1.0)
         roi_focus = roi_z[self.y_f:self.y_f+self.height_f,
                           self.x_f:self.x_f+self.width_f] # focused region
-        
-        # Detect pupil
-        gray_roi = cv2.cvtColor(roi_focus, cv2.COLOR_BGR2GRAY) # convert roi to gray
-        gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur
-        gray_roi = cv2.medianBlur(gray_roi, 3) # apply median blur
-
-        threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1] # binary inv thresh
-        contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # contours
-        contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
-
-        # Pre-computations
-        self.fps_render = 0 if len(self.q) == 0 else np.mean(self.q) # Rendering FPS
 
         tf = frame.TextableFrame(roi)
 
@@ -133,19 +122,19 @@ class VideoStream(object):
         if rec_elapsed != -1: tf.add_text(frame.BOTTOM_LEFT, f"[R] {rec_elapsed:.3f}s", (0, 0, 255))
         # Bottom right
         tf.add_text(frame.BOTTOM_RIGHT, "[Press Q to Exit]", (0, 200, 255))
+        
+        # Finally: Try detect pupil
+        centers, sizes = self._find_pupils(roi_focus)
 
-        if len(contours) > 0:
-            cnt = contours[0]
-            (x, y, w, h) = cv2.boundingRect(cnt) # minimum bounding box around binary contour
-            pd = int(h/2) # update PD
-            xf = self.x_f + x
-            yf = self.y_f + y
-            cv2.circle(roi,  (xf + w//2,      yf + h//2), pd,           (0,  0, 255), 2)
-            cv2.line(roi,    (xf + w//2, 0), (xf + w//2,  self.height), (50, 200, 0), 1)
-            cv2.line(roi, (0, yf + h//2),    (self.width, yf + h//2),   (50, 200, 0), 1)
-            
+        for i in range(len(sizes)):
+            if i == 4: break # only allow max 4 detections
+
+            cv2.circle(roi, tuple(centers[i]), sizes[i], (0,  0, 255), 2)
+            cv2.line(roi, (centers[i, 0], 0), (centers[i, 0], self.height), (50, 200, 0), 1)
+            cv2.line(roi, (0, centers[i, 1]), (self.width,  centers[i, 1]), (50, 200, 0), 1)
+            tf.add_text(tuple(centers[i]-int(sizes[i]/2)), sizes[i], (0, 0, 255))
+        
         cv2.imshow(WINDOW_TITLE, roi)
-        cv2.imshow("Threshold", threshold) # TODO: Remove
 
         return roi, pd
 
@@ -160,6 +149,27 @@ class VideoStream(object):
         self.cap.release()
         if self.out is not None: self.out.release()
         cv2.destroyAllWindows()
+    
+    def _find_pupils(self, roi):
+        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) # convert roi to gray
+        gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur
+        gray_roi = cv2.medianBlur(gray_roi, 3) # apply median blur
+
+        threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1] # binary inv thresh
+        contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # contours
+        contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+
+        centers = np.zeros((len(contours), 2), dtype=np.uint16)
+        sizes   = np.zeros(len(contours),      dtype=np.uint16)
+
+        for i, cnt in enumerate(contours):
+            (x, y, w, h) = cv2.boundingRect(cnt) # minimum bounding box around binary contour
+            centers[i] = (self.x_f + x + w // 2, self.y_f + y + h // 2)
+            sizes[i] = int(h/2) # relative pupil diameter
+        
+        #cv2.imshow("Threshold", threshold)
+        
+        return centers, sizes
 
     def _terminate(self, msg):
         print(msg)
