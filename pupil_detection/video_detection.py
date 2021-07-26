@@ -6,12 +6,13 @@ from pathlib import Path # file handling
 import csv # For diameter history analysis
 from collections import deque
 from threading import Thread
+from datetime import datetime
 
 # Constants
-MONITOR_FRAMES   = 15                # no. of frames to monitor for FPS calculation
-ZOOM             = 2.5               # zoom amount
-RECORDING_DIR    = "recordings"      # location at which PD recordings are saved
-WINDOW_TITLE     = "Pupil Detector"  # camera window title
+MONITOR_FRAMES      = 15                # no. of frames to monitor for FPS calculation
+ZOOM                = 2.5               # zoom amount
+RECORDING_DIR       = "recordings"      # location at which PD recordings are saved
+WINDOW_TITLE        = "Pupil Detector"  # camera window title
 
 # Text positioning
 TOP_LEFT     = 0
@@ -196,7 +197,8 @@ def main():
             rec_init = now()
 
             # Generate recording folder and parent folder(s)
-            path = f"{RECORDING_DIR}/{rec_init}" # timestamp of the recording
+            path = "{rd}/{ts}".format(rd=RECORDING_DIR, # timestamp of the recording
+                    ts=datetime.fromtimestamp(rec_init//1000).strftime("%Y-%m-%d %H.%M.%S"))
             Path(path).mkdir(parents=True, exist_ok=True)
 
             path_video = f"{path}/output.avi"
@@ -206,10 +208,10 @@ def main():
 
             print(f"Generated '{path_video}'")
         
-        # try:
-        frame, pd = vs.render_frame(pd, perc, rec_elapsed) # render and obtain ROI and PD
-        # except Exception as err:
-        #     return vs._terminate("Error caught in main loop:\n" + str(err))
+        try:
+            frame, pd = vs.render_frame(pd, perc, rec_elapsed) # render and obtain ROI and PD
+        except Exception as err:
+            return vs._terminate("Error caught in main loop:\n" + str(err))
 
         #### Post-processing for next frame ####
 
