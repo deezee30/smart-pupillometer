@@ -4,11 +4,13 @@ import util
 import textable_frame as frame
 from collections import deque
 from threading import Thread
+import time
 
 # Constants
 MONITOR_FRAMES  = 50               # no. of frames to monitor for FPS calculation
 ZOOM            = 1                # zoom amount
 WINDOW_TITLE    = "Pupil Detector" # camera window title
+FOCUS_BOX_SCALE = 2                # bounding box scale with respect to zoomed resolution
 
 class VideoStream(object):
     def __init__(self, src):
@@ -19,12 +21,28 @@ class VideoStream(object):
         if not self.cap.isOpened(): return self._terminate("Failed to open camera!")
 
         # Define width and height of video and zoom properties
-        self.width0  = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH));  # original width of video
-        self.height0 = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)); # original height of video
-        self.width   = int(self.width0  / ZOOM);              # zoomed width
-        self.height  = int(self.height0 / ZOOM);              # zoomed height
-        self.roi_x   = int((self.width0  - self.width ) / 2); # zoomed roi x pos
-        self.roi_y   = int((self.height0 - self.height) / 2); # zoomed roi y pos
+        self.width0   = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # original width of video
+        self.height0  = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) # original height of video
+        # Zoomed video properties
+        self.width    = int(self.width0  / ZOOM)               # zoomed width
+        self.height   = int(self.height0 / ZOOM)               # zoomed height
+        self.zoom_x   = int((self.width0  - self.width)  / 2)  # zoomed ROI x pos
+        self.zoom_y   = int((self.height0 - self.height) / 2)  # zoomed ROI y pos
+        # Focused bounding box properties
+        self.width_f  = int(self.width  / FOCUS_BOX_SCALE)     # zoomed, focused width
+        self.height_f = int(self.height / FOCUS_BOX_SCALE)     # zoomed, focused height
+        self.x_f      = int((self.width  - self.width_f)  / 2) # zoomed, focused ROI x pos
+        self.y_f      = int((self.height - self.height_f) / 2) # zoomed, focused ROI y pos
+        # Compute bounding box properties
+        self.bb_shape = np.zeros((4, 2, 2), dtype=np.uint16)
+        self.bb_shape[0] = ((0,                     0),                         # top pt 1
+                            (self.width,            self.y_f))                  # top pt 2
+        self.bb_shape[1] = ((0,                     self.y_f+self.height_f),    # bottom pt 1
+                            (self.width,            self.height))               # bottom pt 2
+        self.bb_shape[2] = ((0,                     self.y_f),                  # left pt 1
+                            (self.x_f,              self.y_f+self.height_f))    # left pt 2
+        self.bb_shape[3] = ((self.x_f+self.width_f, self.y_f),                  # right pt 1
+                            (self.width,            self.y_f+self.height_f))    # right pt 2
 
         # Handle FPS
         self.q = deque(maxlen = MONITOR_FRAMES) # render FPS
@@ -69,20 +87,33 @@ class VideoStream(object):
         # Check if ok
         if not self.out.isOpened(): return self._terminate(f"Could not open output video {path}")
 
-    def render_frame(self, pd, pd_pct = -1, rec_elapsed = -1):        
+    def render_frame(self, pd, pd_pct = -1, rec_elapsed = -1):
         # Await until read is successful
         while not self.frame_ok: continue
 
         # Zoom
-        roi = self.frame[self.roi_y:self.roi_y+self.height,
-                         self.roi_x:self.roi_x+self.width] # region of image
+        roi_z = self.frame[self.zoom_y:self.zoom_y+self.height,
+                           self.zoom_x:self.zoom_x+self.width] # region of image
         
-        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0)
-        gray_roi = cv2.medianBlur(gray_roi, 3)
+        roi = roi_z.copy() # create a copy not tied to fx
+        
+        # Compute and render a bounding focus box
+        alpha = 0.4
+        for i in range(4):
+            ((x0, y0), (x1, y1)) = self.bb_shape[i]
+            roi_sub = roi_z[y0:y1, x0:x1]
+            roi_cover = np.ones(roi_sub.shape, dtype=np.uint8)
+            roi[y0:y1, x0:x1] = cv2.addWeighted(roi_sub, 1-alpha, roi_cover, alpha, 1.0)
+        roi_focus = roi_z[self.y_f:self.y_f+self.height_f,
+                          self.x_f:self.x_f+self.width_f] # focused region
+        
+        # Detect pupil
+        gray_roi = cv2.cvtColor(roi_focus, cv2.COLOR_BGR2GRAY) # convert roi to gray
+        gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur
+        gray_roi = cv2.medianBlur(gray_roi, 3) # apply median blur
 
-        threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1]
-        contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
+        threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1] # binary inv thresh
+        contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # contours
         contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
         # Pre-computations
@@ -107,11 +138,14 @@ class VideoStream(object):
             cnt = contours[0]
             (x, y, w, h) = cv2.boundingRect(cnt) # minimum bounding box around binary contour
             pd = int(h/2) # update PD
-            cv2.circle(roi,  (x + w//2,      y + h//2), pd,           (0,  0, 255), 2)
-            cv2.line(roi,    (x + w//2, 0), (x + w//2,  self.height), (50, 200, 0), 1)
-            cv2.line(roi, (0, y + h//2),    (self.width, y + h//2),   (50, 200, 0), 1)
+            xf = self.x_f + x
+            yf = self.y_f + y
+            cv2.circle(roi,  (xf + w//2,      yf + h//2), pd,           (0,  0, 255), 2)
+            cv2.line(roi,    (xf + w//2, 0), (xf + w//2,  self.height), (50, 200, 0), 1)
+            cv2.line(roi, (0, yf + h//2),    (self.width, yf + h//2),   (50, 200, 0), 1)
             
         cv2.imshow(WINDOW_TITLE, roi)
+        cv2.imshow("Threshold", threshold) # TODO: Remove
 
         return roi, pd
 

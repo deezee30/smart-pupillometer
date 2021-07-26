@@ -6,3 +6,4 @@ include/README
 test/README
 pupil_detection/recordings
 pupil_detection/build
+pupil_detection/__pycache__
