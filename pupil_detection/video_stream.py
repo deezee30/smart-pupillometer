@@ -124,22 +124,13 @@ class VideoStream(object):
         tf.add_text(frame.BOTTOM_RIGHT, "[Press Q to Exit]", (0, 200, 255))
         
         # Finally: Try detect pupil
-        centers, sizes = self._find_pupils(roi_focus)
+        center, pd = self._find_pupil(roi_focus)
 
-        count = 0
-        for i in range(len(sizes)):
-            ctr = centers[i]
-            pd = sizes[i]
-
-            if not (10 < pd < self.height_f/2): break # disregard unrealistic sizes
-            if count == 4: break # only allow max 4 detections
-
-            cv2.circle(roi, tuple(ctr), pd//2, (0,  0, 255), 2)
-            cv2.line(roi,    (ctr[0], 0), (ctr[0], self.height), (50, 200, 0), 1)
-            cv2.line(roi, (0, ctr[1]),    (self.width,  ctr[1]), (50, 200, 0), 1)
-            tf.add_text(tuple(ctr-pd//2), str(pd), (0, 0, 255))
-
-            count += 1
+        if pd > 0: # if pupil is found
+            cv2.circle(roi, tuple(center), pd//2, (0,  0, 255), 2)
+            cv2.line(roi,    (center[0], 0), (center[0], self.height), (50, 200, 0), 1)
+            cv2.line(roi, (0, center[1]),    (self.width,  center[1]), (50, 200, 0), 1)
+            tf.add_text((center[0]-pd//2, center[1]-pd//2), str(pd), (0, 0, 255))
         
         cv2.imshow(WINDOW_TITLE, roi)
 
@@ -157,27 +148,28 @@ class VideoStream(object):
         if self.out is not None: self.out.release()
         cv2.destroyAllWindows()
     
-    def _find_pupils(self, roi):
+    def _find_pupil(self, roi):
         gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) # convert roi to gray
-        gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur
-        gray_roi = cv2.medianBlur(gray_roi, 3) # apply median blur
+        gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur to remove noise to an extent
+        gray_roi = cv2.medianBlur(gray_roi, 3) # apply median blur to further reduce noise
 
-        threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1] # binary inv thresh
-        contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # contours
-        contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+        threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1] # apply inverse binary threshold to get the contours
+        contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # find visible contours after thresholding
+        contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True) # select the largest contour, as it is the pupil
 
-        centers = np.zeros((len(contours), 2), dtype=np.uint16)
-        sizes   = np.zeros(len(contours),      dtype=np.uint16)
-
-        for i, cnt in enumerate(contours):
+        # find the largest sized pupil
+        center = (-1, -1)
+        size = 0
+        for cnt in contours:
             (x, y, w, h) = cv2.boundingRect(cnt) # minimum bounding box around binary contour
-            centers[i] = (self.x_f + x + w // 2, self.y_f + y + h // 2)
-            sizes[i] = int(h) # relative pupil diameter
+            if h > size:
+                center = (self.x_f + x + w // 2, self.y_f + y + h // 2)
+                size = int(h) # relative pupil diameter
         
         cv2.imshow("Threshold", threshold)
         cv2.imshow("Gray", gray_roi)
         
-        return centers, sizes
+        return center, size
 
     def _terminate(self, msg):
         print(msg)
