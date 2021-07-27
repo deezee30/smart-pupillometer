@@ -50,10 +50,8 @@ def main():
 
             print(f"Generated '{path_video}'")
         
-        #try:
-            frame, pd = vs.render_frame(pd, perc, rec_elapsed) # render and obtain ROI and PD
-        #except Exception as err:
-        #    return vs._terminate("Error caught in main loop:\n" + str(err))
+        # Render and obtain ROI and PD
+        frame, pd = vs.render_frame(pd, perc, rec_elapsed)
 
         #### Post-processing for next frame ####
 

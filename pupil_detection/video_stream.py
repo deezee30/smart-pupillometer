@@ -126,13 +126,20 @@ class VideoStream(object):
         # Finally: Try detect pupil
         centers, sizes = self._find_pupils(roi_focus)
 
+        count = 0
         for i in range(len(sizes)):
-            if i == 4: break # only allow max 4 detections
+            ctr = centers[i]
+            pd = sizes[i]
 
-            cv2.circle(roi, tuple(centers[i]), sizes[i], (0,  0, 255), 2)
-            cv2.line(roi, (centers[i, 0], 0), (centers[i, 0], self.height), (50, 200, 0), 1)
-            cv2.line(roi, (0, centers[i, 1]), (self.width,  centers[i, 1]), (50, 200, 0), 1)
-            tf.add_text(tuple(centers[i]-int(sizes[i]/2)), sizes[i], (0, 0, 255))
+            if not (10 < pd < self.height_f/2): break # disregard unrealistic sizes
+            if count == 4: break # only allow max 4 detections
+
+            cv2.circle(roi, tuple(ctr), pd//2, (0,  0, 255), 2)
+            cv2.line(roi,    (ctr[0], 0), (ctr[0], self.height), (50, 200, 0), 1)
+            cv2.line(roi, (0, ctr[1]),    (self.width,  ctr[1]), (50, 200, 0), 1)
+            tf.add_text(tuple(ctr-pd//2), str(pd), (0, 0, 255))
+
+            count += 1
         
         cv2.imshow(WINDOW_TITLE, roi)
 
@@ -165,9 +172,10 @@ class VideoStream(object):
         for i, cnt in enumerate(contours):
             (x, y, w, h) = cv2.boundingRect(cnt) # minimum bounding box around binary contour
             centers[i] = (self.x_f + x + w // 2, self.y_f + y + h // 2)
-            sizes[i] = int(h/2) # relative pupil diameter
+            sizes[i] = int(h) # relative pupil diameter
         
-        #cv2.imshow("Threshold", threshold)
+        cv2.imshow("Threshold", threshold)
+        cv2.imshow("Gray", gray_roi)
         
         return centers, sizes
 
