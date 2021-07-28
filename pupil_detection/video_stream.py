@@ -9,7 +9,7 @@ from threading import Thread
 MONITOR_FRAMES  = 50               # no. of frames to monitor for FPS calculation
 ZOOM            = 1                # zoom amount
 WINDOW_TITLE    = "Pupil Detector" # camera window title
-FOCUS_BOX_SCALE = 2                # bounding box scale with respect to zoomed resolution
+FOCUS_BOX_SCALE = 3                # bounding box scale with respect to zoomed resolution
 
 class VideoStream(object):
     def __init__(self, src):
@@ -124,10 +124,10 @@ class VideoStream(object):
         tf.add_text(frame.BOTTOM_RIGHT, "[Press Q to Exit]", (0, 200, 255))
         
         # Finally: Try detect pupil
-        center, pd = self._find_pupil(roi_focus)
+        center, pd = self._find_pupil(roi_focus, min_size=10, max_size=80)
 
         if pd > 0: # if pupil is found
-            cv2.circle(roi, tuple(center), pd//2, (0,  0, 255), 2)
+            cv2.circle(roi, tuple(center), pd//2, (0, 0, 255), 2)
             cv2.line(roi,    (center[0], 0), (center[0], self.height), (50, 200, 0), 1)
             cv2.line(roi, (0, center[1]),    (self.width,  center[1]), (50, 200, 0), 1)
             tf.add_text((center[0]-pd//2, center[1]-pd//2), str(pd), (0, 0, 255))
@@ -148,12 +148,16 @@ class VideoStream(object):
         if self.out is not None: self.out.release()
         cv2.destroyAllWindows()
     
-    def _find_pupil(self, roi):
+    def _find_pupil(self, roi, min_size = 0, max_size = None):
+        if max_size == None: max_size = self.height_f
+
         gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) # convert roi to gray
         gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur to remove noise to an extent
-        gray_roi = cv2.medianBlur(gray_roi, 3) # apply median blur to further reduce noise
+        gray_roi = cv2.medianBlur(gray_roi, 5) # apply median blur to further reduce noise
 
         threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1] # apply inverse binary threshold to get the contours
+        #threshold = cv2.adaptiveThreshold(gray_roi, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+        #                                  cv2.THRESH_BINARY_INV, 11, 2)
         contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # find visible contours after thresholding
         contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True) # select the largest contour, as it is the pupil
 
@@ -162,7 +166,7 @@ class VideoStream(object):
         size = 0
         for cnt in contours:
             (x, y, w, h) = cv2.boundingRect(cnt) # minimum bounding box around binary contour
-            if h > size:
+            if h > size and (min_size < h < max_size):
                 center = (self.x_f + x + w // 2, self.y_f + y + h // 2)
                 size = int(h) # relative pupil diameter
         
