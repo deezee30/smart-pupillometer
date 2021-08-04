@@ -8,6 +8,8 @@ import video_stream
 
 # Constants
 RECORDING_DIR = "recordings" # location at which PD recordings are saved
+ZOOM            = 2          # zoom amount
+FOCUS_BOX_SCALE = 3          # bounding box scale with respect to zoomed resolution
 
 # Main exec
 def main():
@@ -33,7 +35,10 @@ def main():
     perc = -1
 
     # Set up video stream and run in a separate thread
-    vs = video_stream.VideoStream(args.src)
+    vs = video_stream.VideoStream(src=args.src,
+                                  zoom=ZOOM,
+                                  focus_box_scale=FOCUS_BOX_SCALE,
+                                  square=False)
     while True:
         if rec and rec_init == 0: # start of recording
             rec_init = util.now()

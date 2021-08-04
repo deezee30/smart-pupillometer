@@ -6,30 +6,36 @@ from collections import deque
 from threading import Thread
 
 # Constants
-MONITOR_FRAMES  = 50               # no. of frames to monitor for FPS calculation
-ZOOM            = 1                # zoom amount
-WINDOW_TITLE    = "Pupil Detector" # camera window title
-FOCUS_BOX_SCALE = 3                # bounding box scale with respect to zoomed resolution
+WEBCAM_FRAME_WIDTH  = 1080             # default webcam width
+WEBCAM_FRAME_HEIGHT = 720              # default webcam height
+MONITOR_FRAMES      = 50               # no. of frames to monitor for FPS calculation
+WINDOW_TITLE        = "Pupil Detector" # camera window title
 
 class VideoStream(object):
-    def __init__(self, src):
+    def __init__(self, src, zoom = 1, focus_box_scale = 1, square = False):
+        self.zoom = zoom
+        self.square = square
+        
         # Set up input stream and configure
         self.cap = cv2.VideoCapture(src)
+        if src == 0:
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, WEBCAM_FRAME_WIDTH)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, WEBCAM_FRAME_HEIGHT)
         
         # Ensure video is successfully opened
-        if not self.cap.isOpened(): return self._terminate("Failed to open camera!")
+        if not self.cap.isOpened(): self._terminate("Failed to open camera!")
 
         # Define width and height of video and zoom properties
         self.width0   = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # original width of video
         self.height0  = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) # original height of video
         # Zoomed video properties
-        self.width    = int(self.width0  / ZOOM)               # zoomed width
-        self.height   = int(self.height0 / ZOOM)               # zoomed height
+        self.width    = int(self.width0  / zoom)               # zoomed width
+        self.height   = int(self.height0 / zoom)               # zoomed height
         self.zoom_x   = int((self.width0  - self.width)  / 2)  # zoomed ROI x pos
         self.zoom_y   = int((self.height0 - self.height) / 2)  # zoomed ROI y pos
         # Focused bounding box properties
-        self.width_f  = int(self.width  / FOCUS_BOX_SCALE)     # zoomed, focused width
-        self.height_f = int(self.height / FOCUS_BOX_SCALE)     # zoomed, focused height
+        self.width_f  = int(self.width  / focus_box_scale)     # zoomed, focused width
+        self.height_f = int(self.height / focus_box_scale)     # zoomed, focused height
         self.x_f      = int((self.width  - self.width_f)  / 2) # zoomed, focused ROI x pos
         self.y_f      = int((self.height - self.height_f) / 2) # zoomed, focused ROI y pos
         # Compute bounding box properties
@@ -84,7 +90,7 @@ class VideoStream(object):
                                    isColor = True) # use colour = true
         
         # Check if ok
-        if not self.out.isOpened(): return self._terminate(f"Could not open output video {path}")
+        if not self.out.isOpened(): self._terminate(f"Could not open output video {path}")
 
     def render_frame(self, pd, pd_pct = -1, rec_elapsed = -1):
         # Await until read is successful
@@ -107,12 +113,18 @@ class VideoStream(object):
             roi[y0:y1, x0:x1] = cv2.addWeighted(roi_sub, 1-alpha, roi_cover, alpha, 1.0)
         roi_focus = roi_z[self.y_f:self.y_f+self.height_f,
                           self.x_f:self.x_f+self.width_f] # focused region
+        
+        # Compute and render black side letter boxes if square aspect ratio is enabled
+        if self.square:
+            mrg = (self.width - self.height) // 2 # margin due to square aspect ratio
+            cv2.rectangle(roi, (0, 0), (mrg, self.height), (0, 0, 0), -1)
+            cv2.rectangle(roi, (self.width-mrg, 0), (self.width, self.height), (0, 0, 0), -1)
 
-        tf = frame.TextableFrame(roi)
+        tf = frame.TextableFrame(roi, square=self.square)
 
         # Top left
         tf.add_text(frame.TOP_LEFT, f"Image: {self.height} x {self.width}")
-        tf.add_text(frame.TOP_LEFT, f"Zoom: {ZOOM:.1f}")
+        tf.add_text(frame.TOP_LEFT, f"Zoom: {self.zoom:.1f}x")
         tf.add_text(frame.TOP_LEFT, f"Codec: {self.ext}")
         # Top right
         tf.add_text(frame.TOP_RIGHT, f"Render FPS: {self.fps_render:.1f}")
@@ -155,9 +167,7 @@ class VideoStream(object):
         gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur to remove noise to an extent
         gray_roi = cv2.medianBlur(gray_roi, 5) # apply median blur to further reduce noise
 
-        threshold = cv2.threshold(gray_roi, 15, 255, cv2.THRESH_BINARY_INV)[1] # apply inverse binary threshold to get the contours
-        #threshold = cv2.adaptiveThreshold(gray_roi, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-        #                                  cv2.THRESH_BINARY_INV, 11, 2)
+        threshold = cv2.threshold(gray_roi, 50, 255, cv2.THRESH_BINARY_INV)[1] # apply inverse binary threshold to get the contours
         contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # find visible contours after thresholding
         contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True) # select the largest contour, as it is the pupil
 
@@ -171,7 +181,6 @@ class VideoStream(object):
                 size = int(h) # relative pupil diameter
         
         cv2.imshow("Threshold", threshold)
-        cv2.imshow("Gray", gray_roi)
         
         return center, size
 
@@ -179,4 +188,4 @@ class VideoStream(object):
         print(msg)
         input("Press 'Enter' to close...")
         cv2.destroyAllWindows()
-        return -1
+        exit(0)
