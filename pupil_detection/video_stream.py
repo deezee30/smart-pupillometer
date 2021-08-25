@@ -85,7 +85,7 @@ class VideoStream(object):
     def setup_output(self, path):
         self.out = cv2.VideoWriter(path, # output path
                                    self.ex, # codec type (int form)
-                                   self.fps_camera, # input camera FPS
+                                   210, # output FPS
                                    (self.width, self.height), # output roi size
                                    isColor = True) # use colour = true
         
@@ -136,7 +136,7 @@ class VideoStream(object):
         tf.add_text(frame.BOTTOM_RIGHT, "[Press Q to Exit]", (0, 200, 255))
         
         # Finally: Try detect pupil
-        center, pd = self._find_pupil(roi_focus, min_size=10, max_size=80)
+        center, pd = self._find_pupil(roi_focus, min_size=20, max_size=80)
 
         if pd > 0: # if pupil is found
             cv2.circle(roi, tuple(center), pd//2, (0, 0, 255), 2)
@@ -180,7 +180,7 @@ class VideoStream(object):
                 center = (self.x_f + x + w // 2, self.y_f + y + h // 2)
                 size = int(h) # relative pupil diameter
         
-        cv2.imshow("Threshold", threshold)
+        #cv2.imshow("Threshold", threshold)
         
         return center, size
 

@@ -39,6 +39,7 @@ def main():
                                   zoom=ZOOM,
                                   focus_box_scale=FOCUS_BOX_SCALE,
                                   square=False)
+    
     while True:
         if rec and rec_init == 0: # start of recording
             rec_init = util.now()
@@ -83,7 +84,7 @@ def main():
             # Save PD history to CSV file
             with open(f"{path}/pd_history.csv", "w", newline="") as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow(["Time [ms]", "Relative PD"])
+                writer.writerow(["Time [s]", "Relative PD"])
                 for ms in rec_pd:
                     writer.writerow([ms, rec_pd[ms]])
 

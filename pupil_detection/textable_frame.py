@@ -1,6 +1,5 @@
 import cv2 # Computer vision
 import numpy as np
-from numpy.core.fromnumeric import shape
 
 # Text format
 TEXT_MARGIN = 15
