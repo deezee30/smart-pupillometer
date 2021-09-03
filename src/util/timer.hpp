@@ -12,11 +12,12 @@ class Timer {
     /**
      * Initiates timer for heavy tasks if timing feature is enabled.
      */
-    inline void start(bool msg = false) {
+    inline uint32_t start(bool msg = false) {
 #if TIMING
         if (msg) Serial << F("Working...") << endl;
 #endif
         last_millis = millis();
+        return last_millis;
     }
 
     /**

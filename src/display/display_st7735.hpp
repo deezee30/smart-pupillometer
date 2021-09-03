@@ -37,7 +37,9 @@ class DisplayST7735 : public Display {
                  drawFastHLine(uint32_t x, uint32_t y, uint32_t w, uint32_t c),
                  drawPixel(uint32_t x, uint32_t y, uint32_t c) override;
 
-    virtual uint16_t colorBlack(),
+    virtual uint16_t colorRed(),
+                     colorGreen(),
+                     colorBlack(),
                      colorWhite(),
                      colorLightGrey(),
                      colorDarkGrey(),

@@ -75,7 +75,9 @@ class Display : public ColorUtil {
                  drawFastHLine(uint32_t x, uint32_t y, uint32_t w, uint32_t c) = 0,
                  drawPixel(uint32_t x, uint32_t y, uint32_t c) = 0;
     
-    virtual uint16_t colorBlack() = 0,
+    virtual uint16_t colorRed() = 0,
+                     colorGreen() = 0,
+                     colorBlack() = 0,
                      colorWhite() = 0,
                      colorLightGrey() = 0,
                      colorDarkGrey() = 0,
@@ -83,7 +85,6 @@ class Display : public ColorUtil {
     virtual uint8_t  fontTitle() = 0,
                      fontContent() = 0;
     
-    // TODO: Smart pointers
     virtual Print* out() = 0;
 
     virtual int16_t print(int32_t, int32_t, const __FlashStringHelper*) = 0,

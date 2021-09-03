@@ -19,6 +19,8 @@ void DisplayST7735::drawFastHLine(uint32_t x, uint32_t y,
 void DisplayST7735::drawPixel(uint32_t x, uint32_t y,
                               uint32_t c)                   { tft.drawPixel(x, y, c); }
 
+uint16_t DisplayST7735::colorRed()          { return TFT_RED; }
+uint16_t DisplayST7735::colorGreen()        { return TFT_GREEN; }
 uint16_t DisplayST7735::colorBlack()        { return TFT_BLACK; }
 uint16_t DisplayST7735::colorWhite()        { return TFT_WHITE; }
 uint16_t DisplayST7735::colorLightGrey()    { return TFT_LIGHTGREY; }

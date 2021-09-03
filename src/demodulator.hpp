@@ -7,7 +7,7 @@
 #include "display/screen.hpp"
 
 static const uint8_t tlim = 8;     // us
-static const uint16_t res = 250;  // points
+static const uint16_t res = 200;  // points
 
 // TODO: Optimise class
 // One idea: Generate waveforms at setup
