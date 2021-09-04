@@ -26,7 +26,7 @@ bool Display::renderLeft() {
     setTextFont(fontContent());
     setTextColor(colorScale());
     fillRect(0, TOP_HEIGHT+10,  SIDE_WIDTH_LEFT, 30, colorBlack()); // remove prevs
-    int16_t pad1 = print(1, TOP_HEIGHT+10, cfg::frequency());
+    int16_t pad1 = print(1, TOP_HEIGHT+10, cfg::freq);
     print(pad1, TOP_HEIGHT+10, F(" M"));
     int16_t pad2 = print(1, TOP_HEIGHT+10+pad1, image_scale_);
     print(pad2+1, TOP_HEIGHT+15+pad2, F("x"));

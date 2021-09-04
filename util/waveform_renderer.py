@@ -12,7 +12,7 @@ from IPython.display import display, clear_output
 
 # %% Load vars (expensive) - MATLAB v7.3+ (H5PY)
 import h5py
-loadpath = "20210901-eyescan/Raster2_100mV_cycles_10_phase_0.mat"
+loadpath = "../../Deniss_eye_exp/20210901-eyescan/Raster2_100mV_cycles_10_phase_0.mat"
 with h5py.File(loadpath, "r") as mat:
     time_traces = mat["time_traces"][()].squeeze()
     DP = mat["DP"][()].squeeze()
@@ -30,11 +30,6 @@ tt = time_traces
 # 1) Unfocused  5 MHz | (20000, 31, 31)     | 15000 | 17000
 # 2) Focused   15 MHz | (20000, 31, 31)     |  9000 | 11000
 # 3) Unfocused 10 MHz | (40000, 81, 81)     |  2000 |  5000
-
-# Dimensions: (20000, 31, 31) or (40000, 81, 81)
-# - 20000 or 40000: time point
-# - 31 or 81: up-down (UD)
-# - 31 or 81: distal-proximal (DP)
 
 # Waveform properties
 fs = 100 # sampling frequency [MHz]

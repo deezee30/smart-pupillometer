@@ -6,7 +6,6 @@
 #include "util/timer.hpp"
 #include "display/screen.hpp"
 
-static const uint8_t tlim = 8;     // us
 static const uint16_t res = 200;  // points
 
 // TODO: Optimise class
@@ -99,14 +98,14 @@ class Demodulator {
         Timer timer;
         timer.start();
 
-        static const Array<float, res> tspan = linspace<res>(0, tlim); // time span [us]
+        static const Array<float, res> tspan = linspace<res>(0, cfg::acq_time); // time span [us]
 
         Column scan_565; // rgb565 format
         float sspan[res] = {};
 
         // Compile noisy pulse-echo waveform
         for (uint8_t t = 0; t < echos.size(); t++) {
-            const Array<float, res> echo = generateEcho(tspan, echos[t], tlim);
+            const Array<float, res> echo = generateEcho(tspan, echos[t], cfg::acq_time);
 
             for (uint16_t i = 0; i < res; i++)
                 sspan[i] += echo[i]/(t+3);
@@ -129,7 +128,7 @@ class Demodulator {
         Array<uint16_t, res> peaks; // x axis: time
         Array<float, res> envelope; // y axis: signal intensity
         for (uint16_t i = 0; i < n_peaks; i++) {
-            peaks.push_back(peaks_idx[i] * tlim/res); // convert peak index to time unit
+            peaks.push_back(peaks_idx[i] * cfg::acq_time/res); // convert peak index to time unit
             envelope.push_back(sspan[peaks_idx[i]]); // obtain signal intensity at peak time
         }
 
@@ -154,7 +153,7 @@ class Demodulator {
     static Image generateBScan(const Array<float, N> echos,
                                const uint16_t n_rows = IMG_HEIGHT,
                                const uint16_t n_cols = IMG_WIDTH) {
-        static const Array<float, res> tspan = linspace<res>(0, tlim); // time span [us]
+        static const Array<float, res> tspan = linspace<res>(0, cfg::acq_time); // time span [us]
 
         // stored and processed transposed for easy column extraction
         Image image_565; // rgb565 format

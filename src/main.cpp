@@ -38,7 +38,7 @@
 #define PIN_IN_SLEEP     3  // Switch input for sleep mode
 
 // Variables for internal use
-DisplayST7735 display(cfg::imageScale()); // create TFT ST7735 display instance
+DisplayST7735 display(cfg::img_scale); // create TFT ST7735 display instance
 uint16_t total_cols = display.getColumns();
 
 // Serial communication manager

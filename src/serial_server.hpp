@@ -59,8 +59,11 @@ class SerialStream {
                     // listen for stream
                     while (!SerialUSB.available());
 
-                    // extract configuration
-                    cfg::update(SerialUSB.read(), SerialUSB.read(), SerialUSB.read());
+                    // extract configuration values
+                    cfg::update(SerialUSB.read(), SerialUSB.read(), SerialUSB.read(),
+                                SerialUSB.read(), SerialUSB.read(), SerialUSB.read(),
+                                SerialUSB.read(), SerialUSB.read(), SerialUSB.read(),
+                                SerialUSB.read(), SerialUSB.read(), SerialUSB.read());
 
                     // ready
                     SerialUSB.write(CMD_ACK);

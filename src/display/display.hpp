@@ -21,7 +21,7 @@ class Display : public ColorUtil {
    public:
     uint16_t current_col;
     
-    Display(const uint8_t image_scale = cfg::imageScale()) :
+    Display(const uint8_t image_scale = cfg::img_scale) :
         image_scale_(image_scale),
         image_rows_(IMG_HEIGHT/image_scale),
         image_cols_(IMG_WIDTH/image_scale) {}
