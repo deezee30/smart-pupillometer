@@ -8,7 +8,7 @@
 #include "display/screen.hpp"
 #include "display/display_st7735.hpp"
 #include "util/timer.hpp"
-#include "util/serial_server.hpp"
+#include "serial_server.hpp"
 
 // Loggers and debuggers
 #define DEBUG false    // keep false unless debugging
