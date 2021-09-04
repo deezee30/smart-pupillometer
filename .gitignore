@@ -4,6 +4,10 @@ archive
 lib/README
 include/README
 test/README
+test/__pycache__
 pupil_detection/recordings
 pupil_detection/build
 pupil_detection/__pycache__
+pupil_detection/demo.mp4
+serial_client/__pycache__
+time_traces.mat
