@@ -12,10 +12,9 @@ class DisplayST7735 : public Display {
    public:
     TFT_eSPI tft;
 
-    DisplayST7735(const uint8_t us_frequency_mhz,
-                  const uint8_t image_scale = DEFAULT_IMAGE_SCALE)
-        : Display(us_frequency_mhz, image_scale)
-        , tft(TFT_eSPI(TFT_WIDTH, TFT_HEIGHT)) { // invoke library; pins defined in User_Setup
+    DisplayST7735(const uint8_t image_scale = cfg::imageScale()) :
+        Display(image_scale),
+        tft(TFT_eSPI(TFT_WIDTH, TFT_HEIGHT)) { // invoke library; pins defined in User_Setup.h
     }
 
     ~DisplayST7735() {

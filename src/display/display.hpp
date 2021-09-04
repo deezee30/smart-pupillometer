@@ -14,18 +14,17 @@
 
 class Display : public ColorUtil {
    protected:
-    uint8_t us_freq_;
     uint8_t image_scale_;
     uint16_t image_rows_;
     uint16_t image_cols_;
 
    public:
-    Display(const uint8_t us_freq,
-            const uint8_t image_scale = DEFAULT_IMAGE_SCALE)
-        : us_freq_(us_freq)
-        , image_scale_(image_scale)
-        , image_rows_(IMG_HEIGHT/image_scale)
-        , image_cols_(IMG_WIDTH/image_scale) {}
+    uint16_t current_col;
+    
+    Display(const uint8_t image_scale = cfg::imageScale()) :
+        image_scale_(image_scale),
+        image_rows_(IMG_HEIGHT/image_scale),
+        image_cols_(IMG_WIDTH/image_scale) {}
 
     ~Display() {
         
@@ -46,6 +45,10 @@ class Display : public ColorUtil {
     bool renderRight();
 
     bool renderInner(const Image scan);
+    
+    bool renderColumn(const Column scan) {
+        return renderColumn(current_col, scan);
+    }
 
     bool renderColumn(uint16_t col,
                       const Column scan);
