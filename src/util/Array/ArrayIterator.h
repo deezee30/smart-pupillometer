@@ -1,12 +1,4 @@
-// ----------------------------------------------------------------------------
-// ArrayIterator.h
-//
-//
-// Authors:
-// Peter Polidoro peterpolidoro@gmail.com
-// ----------------------------------------------------------------------------
-#ifndef ARRAY_ITERATOR_H
-#define ARRAY_ITERATOR_H
+#pragma once
 
 template <typename T>
 class ArrayIterator {
@@ -30,5 +22,3 @@ class ArrayIterator {
     T* values_ptr_;
     size_t position_;
 };
-
-#endif

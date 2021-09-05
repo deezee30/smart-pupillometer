@@ -1,12 +1,4 @@
-// ----------------------------------------------------------------------------
-// ArrayDefinitions.h
-//
-//
-// Authors:
-// Peter Polidoro peterpolidoro@gmail.com
-// ----------------------------------------------------------------------------
-#ifndef ARRAY_DEFINITIONS_H
-#define ARRAY_DEFINITIONS_H
+#pragma once
 
 #ifndef ARDUINO
 #include <cstring>
@@ -195,5 +187,3 @@ template <typename T, size_t MAX_SIZE>
 typename Array<T, MAX_SIZE>::const_iterator Array<T, MAX_SIZE>::end() const {
     return const_iterator(values_, size_);
 }
-
-#endif

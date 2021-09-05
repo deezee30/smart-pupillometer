@@ -1,12 +1,4 @@
-// ----------------------------------------------------------------------------
-// Array.h
-//
-//
-// Authors:
-// Peter Polidoro peterpolidoro@gmail.com
-// ----------------------------------------------------------------------------
-#ifndef ARRAY_H
-#define ARRAY_H
+#pragma once
 
 #ifdef ARDUINO
 #include <Arduino.h>
@@ -78,5 +70,3 @@ inline Print& operator<<(Print& stream, const Array<T, MAX_SIZE>& array) {
 }
 
 #include "Array/ArrayDefinitions.h"
-
-#endif
