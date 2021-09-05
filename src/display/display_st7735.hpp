@@ -10,9 +10,9 @@
 class DisplayST7735 : public Display {
 
    public:
-    TFT_eSPI tft;
+    TFT_eSPI tft; // TFT_eSPI library controls the hardware communication
 
-    DisplayST7735(const uint8_t image_scale = cfg::img_scale) :
+    DisplayST7735(const uint8_t image_scale = cfg::imgScale()) :
         Display(image_scale),
         tft(TFT_eSPI(TFT_WIDTH, TFT_HEIGHT)) { // invoke library; pins defined in User_Setup.h
     }
@@ -51,5 +51,6 @@ class DisplayST7735 : public Display {
     virtual int16_t print(int32_t, int32_t, const __FlashStringHelper*),
                     print(int32_t, int32_t, const String&),
                     print(int32_t, int32_t, const char[]),
-                    print(int32_t, int32_t, long) override;
+                    print(int32_t, int32_t, long),
+                    printFloat(int32_t, int32_t, float, uint8_t) override;
 };

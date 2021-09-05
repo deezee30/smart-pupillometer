@@ -1,8 +1,8 @@
 #pragma once
 
 // Includes
-#include "../color_util.h"
-#include "../demodulator.hpp"
+#include "../util/color_util.h"
+#include "screen.hpp"
 
 // View
 
@@ -21,7 +21,7 @@ class Display : public ColorUtil {
    public:
     uint16_t current_col;
     
-    Display(const uint8_t image_scale = cfg::img_scale) :
+    Display(const uint8_t image_scale = cfg::imgScale()) :
         image_scale_(image_scale),
         image_rows_(IMG_HEIGHT/image_scale),
         image_cols_(IMG_WIDTH/image_scale) {}
@@ -93,5 +93,6 @@ class Display : public ColorUtil {
     virtual int16_t print(int32_t, int32_t, const __FlashStringHelper*) = 0,
                     print(int32_t, int32_t, const String&) = 0,
                     print(int32_t, int32_t, const char[]) = 0,
-                    print(int32_t, int32_t, long) = 0;
+                    print(int32_t, int32_t, long) = 0,
+                    printFloat(int32_t, int32_t, float, uint8_t=2) = 0;
 };

@@ -45,3 +45,6 @@ int16_t DisplayST7735::print(int32_t poX, int32_t poY, const char content[]) {
 int16_t DisplayST7735::print(int32_t poX, int32_t poY, long content) {
     return tft.drawNumber(content, poX, poY);
 }
+int16_t DisplayST7735::printFloat(int32_t poX, int32_t poY, float f, uint8_t dp) {
+    return tft.drawFloat(f, dp, poX, poY);
+}

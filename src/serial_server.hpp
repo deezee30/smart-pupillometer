@@ -3,23 +3,23 @@
 #include "display/display.hpp"
 
 #define CMD_HANDSHAKE 0
-#define CMD_ACK 1
-#define CMD_NACK 2
-#define CMD_STREAM 3
-#define CMD_RESET 4
-#define CMD_SETUP 5
+#define CMD_ACK       1
+#define CMD_NACK      2
+#define CMD_STREAM    3
+#define CMD_RESET     4
+#define CMD_SETUP     5
 
 #define STATUS_NOT_SETUP 10
-#define STATUS_STANDBY 11
-#define STATUS_BUSY 12
+#define STATUS_STANDBY   11
+#define STATUS_BUSY      12
+
+#define ALLOCATE_TASK_MILLIS 1000
 
 class SerialStream {
 
    private:
 
-    // Screen Properties
-    Display* display_; // hardware display screen
-    Column   last_col_ = col::BLACK; // cached column; used when no new feed occurs
+    // Screen properties
     uint8_t  s1_ypos_; // vertical position of "S1" mark on screen sidebar
     uint8_t  s2_ypos_; // vertical position of "S2" mark on screen sidebar
 
@@ -28,16 +28,37 @@ class SerialStream {
     uint8_t  status_      = STATUS_NOT_SETUP; // device functionality status
     bool     port_prg_    = false; // programming serial port: debug messages and general outputting
     bool     port_usb_    = false; // native serial port: listen for stream and simple outputting
+
+    // Stream properties
+    bool raw_signal_ = true; // whether or not to listen for unprocessed signal (raw float values)
+
+    // unions used for transmission of data size across stream of larger than 1 byte
+    union u16 {
+        byte b[2];
+        uint16_t val;
+    } u16;
+
+    union i16 {
+        byte b[2];
+        int16_t val;
+    } i16;
+
+    bool toc(uint32_t tic) {
+        return millis() - tic > ALLOCATE_TASK_MILLIS;
+    }
     
    public:
+    Display* display_; // hardware display screen
 
     SerialStream(Display* display, const uint8_t s1_ypos, const uint8_t s2_ypos) :
         display_(display),
         s1_ypos_(s1_ypos),
         s2_ypos_(s2_ypos) {}
     
-    Column listen() {
-        Column col(last_col_);
+    template <size_t N>
+    Array<float, N> listen() {
+        Array<float, N> arr;
+        arr.assign(cfg::numPtsLocal(), 0);
 
         if (port_usb_ && SerialUSB.available()) {
             uint8_t cmd = SerialUSB.read();
@@ -45,66 +66,71 @@ class SerialStream {
             // deny command if busy
             if (status_ == STATUS_BUSY) {
                 SerialUSB.write(CMD_NACK);
-                return col;
+                return arr;
             }
 
             // process command otherwise
+            uint32_t tic = millis(); // record task start time for timeout
             switch (cmd) {
-                case CMD_HANDSHAKE:
+                case CMD_HANDSHAKE: {
                     SerialUSB.write(CMD_ACK); // return pong
                     break;
-                case CMD_SETUP:
-                    SerialUSB.write(CMD_ACK);
+                } case CMD_SETUP: {
+                    SerialUSB.write(CMD_ACK); // acknowledge command
+                    digitalWrite(LED_BUILTIN, HIGH); // turn on LED during setup processing
+                    while (!SerialUSB.available()) if (toc(tic)) return arr; // await stream
 
-                    // listen for stream
-                    while (!SerialUSB.available());
+                    // populate config array with transmitted 2-byte data, assembled
+                    // into unsigned 16-bit integers via LSB (little endianess)
+                    uint16_t cfg[cfg::N_CFG] = {}; // based on the amount of expected config params
+                    uint8_t i = 0;
+                    for (; i < cfg::N_CFG; i++) {
+                        SerialUSB.readBytes(u16.b, 2);
+                        cfg[i] = u16.val;
+                    }
+                    cfg::update(cfg); // schedule config update
 
-                    // extract configuration values
-                    cfg::update(SerialUSB.read(), SerialUSB.read(), SerialUSB.read(),
-                                SerialUSB.read(), SerialUSB.read(), SerialUSB.read(),
-                                SerialUSB.read(), SerialUSB.read(), SerialUSB.read(),
-                                SerialUSB.read(), SerialUSB.read(), SerialUSB.read());
-
-                    // ready
-                    SerialUSB.write(CMD_ACK);
-                    status_ = STATUS_STANDBY;
-
+                    // finish
+                    SerialUSB.write(i == cfg::N_CFG ? CMD_ACK : CMD_NACK); // response
+                    digitalWrite(LED_BUILTIN, LOW); // turn off LED during standby
+                    status_ = STATUS_STANDBY; // enable accepting data streams
                     break;
-                case CMD_STREAM:
+                } case CMD_STREAM: {
                     // only stream when in standby
                     if (status_ != STATUS_STANDBY) {
                         SerialUSB.write(CMD_NACK);
                         break;
                     }
 
-                    SerialUSB.write(CMD_ACK);
+                    SerialUSB.write(CMD_ACK); // acknowledge command
+                    digitalWrite(LED_BUILTIN, HIGH); // turn on LED during stream processing
+                    while (!SerialUSB.available()) if (toc(tic)) return arr; // await stream
+                    // populate data stream with transmitted 2-byte floats multiplied by 100
+                    // and assembled into unsigned 16-bit integers via LSB (little endianess)
+                    uint16_t i = 0;
+                    for (; i < cfg::numPtsLocal(); i++) {
+                        SerialUSB.readBytes(i16.b, 2);
+                        arr.push_back((float) i16.val / 100.);
+                    }
 
-                    // listen for stream
-                    while (!SerialUSB.available());
-                    
-                    // populate column
-                    for (uint16_t r = 0; r < col.max_size(); r++)
-                        col[r] = SerialUSB.read();
-
-                    // finished
-                    SerialUSB.write(CMD_ACK);
-                    // SerialUSB.println((char*) col.data()); // FIXME: Remove
-
+                    // finish
+                    SerialUSB.write(i == cfg::numPtsLocal() ? CMD_ACK : CMD_NACK);
+                    digitalWrite(LED_BUILTIN, LOW); // turn off LED during standby
                     break;
-                case CMD_RESET:
+                } case CMD_RESET: {
                     display_->current_col = 0; // reset column counter
                     display_->clearInner(); // reset view
                     SerialUSB.write(CMD_ACK);
                     break;
-                default:
+                } default: {
                     // return NACK - unrecognised command
                     SerialUSB.write(CMD_NACK);
                     break;
+                }
             }
         }
 
-        last_col_ = col;
-        return col;
+        return arr;
     }
 
     void checkConnections(const bool update_display = false) {
@@ -115,7 +141,7 @@ class SerialStream {
         // Programming USB port (S1)
         if (port_prg_) {
             // connected ...
-            if (!Serial) {
+            if (!Serial) { // TODO: Find a different way of checking connectivity: Handshake?
                 // ... disconnected
                 port_prg_ = false;
                 if (update_display) {
@@ -127,7 +153,7 @@ class SerialStream {
             }
         } else {
             // disconnected ...
-            if (Serial) {
+            if (Serial) { // TODO: Find a different way of checking connectivity: Handshake?
                 // ... connected
                 port_prg_ = true;
                 Serial << F("Found a new USB connection (S1)") << endl;
@@ -143,12 +169,11 @@ class SerialStream {
         // Native USB port (S2)
         if (port_usb_) {
             // connected ...
-            if (!SerialUSB) {
+            if (!SerialUSB) { // TODO: Find a different way of checking connectivity: Handshake?
                 // ... disconnected
                 port_usb_ = false;
                 // Try broadcast to Serial
                 if (port_prg_) Serial << F("Native USB connection (S2) disconnected") << endl;
-                digitalWrite(LED_BUILTIN, LOW); // turn on LED in streaming mode
                 if (update_display) {
                     display_->setTextColor(display_->colorRed());
                     display_->print(1, s2_ypos_, F("S2")); // update serial status
@@ -158,12 +183,11 @@ class SerialStream {
             }
         } else {
             // disconnected ...
-            if (SerialUSB) {
+            if (SerialUSB) { // TODO: Find a different way of checking connectivity: Handshake?
                 // ... connected
                 port_usb_ = true;
                 // Try broadcast to Serial
                 if (port_prg_) Serial << F("Found a new native USB connection (S2)") << endl;
-                digitalWrite(LED_BUILTIN, HIGH); // turn off LED in generating mode
                 if (update_display) {
                     display_->setTextColor(display_->colorGreen());
                     display_->print(1, s2_ypos_, F("S2")); // update serial status

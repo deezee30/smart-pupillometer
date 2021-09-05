@@ -5,7 +5,7 @@
 // SRAM: 96 KB (two banks; 64 KB + 32 KB)
 
 // Includes
-#include "display/screen.hpp"
+#include "signal_processor.hpp"
 #include "display/display_st7735.hpp"
 #include "util/timer.hpp"
 #include "serial_server.hpp"
@@ -38,7 +38,7 @@
 #define PIN_IN_SLEEP     3  // Switch input for sleep mode
 
 // Variables for internal use
-DisplayST7735 display(cfg::img_scale); // create TFT ST7735 display instance
+DisplayST7735 display(cfg::imgScale()); // create TFT ST7735 display instance
 uint16_t total_cols = display.getColumns();
 
 // Serial communication manager
@@ -48,9 +48,6 @@ SerialStream usb(&display, S1_YPOS, S2_YPOS);
 Timer scan_timer;
 uint16_t scan_time = 0;
 uint16_t scan_time_n = 0;
-
-static const float e[] = {0, 1.3, 3.2, 3.8, 5, 6, 7}; // microseconds
-static const Array<float, 7> echos(e);
 
 /**
  * Initialisation
@@ -94,20 +91,13 @@ void loop() {
     // Actively listen for changes in serial connectivity
     usb.checkConnections(true);
 
-    // TODO: Disable scanning while paused
-    //while (digitalRead(PIN_IN_SLEEP) == HIGH) ;
+    // Disable signal retrieval while paused
+    //while (digitalRead(PIN_IN_SLEEP) == LOW) ;
 
     scan_timer.start(); // start timer
-    Column scan;
-    if (usb.s2()) {
-        // Native USB is enabled - set up stream
-        scan = usb.listen();
-    } else {
-        // Generate A scan
-        scan = Demodulator::generateAScan(echos, display.current_col, display.getRows());
-    }
-
-    display.renderColumn(scan);
+    // Generate AScan from ultrasound data stream or otherwise
+    Column scan = SignalProcessor::receiveAScan(display.getRows(), &usb);
+    display.renderColumn(scan); // render on hardware screen at current column
     scan_time += scan_timer.stop(); // stop timer and save
     scan_time_n++;
 
@@ -131,7 +121,6 @@ void loop() {
 
     if (++display.current_col == total_cols) {
         display.current_col = 0;
-        // TODO: Remove when new data comes in
-        //display.clearInner();
+        display.clearInner(); // clear when new data comes in
     }
 }

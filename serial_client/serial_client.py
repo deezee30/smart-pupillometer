@@ -1,8 +1,9 @@
 import time
 import numpy as np
-
+import struct
 import serial
 import serial.tools.list_ports as portlist
+import traceback
 
 CMD_HANDSHAKE = 0
 CMD_ACK = 1
@@ -46,7 +47,9 @@ class SerialUSB():
                 device.timeout = timeout
 
                 return True
-        except:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             return False
     
     def __command(self, cmd) -> bool:
@@ -61,14 +64,17 @@ class SerialUSB():
         ret = -1
         try:
             ret = ord(msg)
-        except:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             ok = False
 
         # Verify returned message
         ok = ret == CMD_ACK
         if not ok:
-            print("> Command '{cmd}' NOT ok: msg={msg} {type_msg}, ret={ret} {type_ret}".format(
-                cmd=np.squeeze(cmd), msg=msg, type_msg=type(msg), ret=ret, type_ret=type(ret)))
+            ok_msg = "" if ok else "NOT "
+            print("> Command '{cmd}' {ok}ok: msg={msg} {type_msg}, ret={ret} {type_ret}".format(
+                    cmd=np.squeeze(cmd), ok=ok_msg, msg=msg, type_msg=type(msg), ret=ret, type_ret=type(ret)))
 
         return ok
 
@@ -82,7 +88,9 @@ class SerialUSB():
     
     def setup(self, config=None) -> bool:
         if config is None: config = self.config
-        return self.__command([CMD_SETUP]) and self.__command(config)
+        # send config values in little endian unsigned 2-byte integers (<u2)
+        return self.__command([CMD_SETUP]) and \
+               self.__command(np.asarray(config, dtype="<u2"))
 
     def reset(self) -> bool:
         return self.__command([CMD_RESET])
@@ -90,11 +98,10 @@ class SerialUSB():
     def stream(self, data) -> bool:
         if self.flipdata: data = np.flip(data)
 
-        ok = self.__command([CMD_STREAM]) and self.__command(data)
-
-        #while self.device.inWaiting() == 0: pass
-        #byt = self.device.readline()
-        #print("in", " ".join(str(c) for c in byt[0:len(byt)-2]))
+        # send data stream in little endian signed 2-byte integers (<i2)
+        # -> they represent a float value multiplied by 100 (= 2 dp)
+        ok = self.__command([CMD_STREAM]) and \
+             self.__command(np.multiply(data, 100).astype(dtype="<i2"))
         
         return ok
     
