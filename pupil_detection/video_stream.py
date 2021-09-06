@@ -167,7 +167,7 @@ class VideoStream(object):
         gray_roi = cv2.GaussianBlur(gray_roi, (11, 11), 0) # apply gaussian blur to remove noise to an extent
         gray_roi = cv2.medianBlur(gray_roi, 5) # apply median blur to further reduce noise
 
-        threshold = cv2.threshold(gray_roi, 50, 255, cv2.THRESH_BINARY_INV)[1] # apply inverse binary threshold to get the contours
+        threshold = cv2.threshold(gray_roi, 40, 255, cv2.THRESH_BINARY_INV)[1] # apply inverse binary threshold to get the contours
         contours = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0] # find visible contours after thresholding
         contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True) # select the largest contour, as it is the pupil
 
