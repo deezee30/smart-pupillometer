@@ -56,7 +56,7 @@ def on_connect(usb: con.SerialUSB):
 
 def main():
     # Load images and do some basic processing first
-    path = os.path.dirname(os.path.realpath(__file__)) + "\\bscan.png"
+    path = os.path.dirname(os.path.realpath(__file__)) + "\\test_img\\bscan.png"
     bscan = Image.open(path).resize((112, CFG_MAX_T-CFG_MIN_T)) # load and resize
     data = np.asarray(bscan)
     data = data[:, :, 0].copy() # convert RGB -> grayscale, remove 4th dim (opacity?) and resize
