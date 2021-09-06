@@ -24,12 +24,37 @@ bool Display::renderTitle() {
 
 bool Display::renderLeft() {
     setTextFont(fontContent());
+    fillRect(0, TOP_HEIGHT, SIDE_WIDTH_LEFT, IMG_HEIGHT, colorBlack()); // remove prevs
+
+    int16_t pad1, pad2;
+
+    // Frequency
+    setTextColor(colorWhite());
+    pad1 = print(0, TOP_HEIGHT+1, F("F:"));
     setTextColor(colorScale());
-    fillRect(0, TOP_HEIGHT+10,  SIDE_WIDTH_LEFT, 30, colorBlack()); // remove prevs
-    int16_t pad1 = print(1, TOP_HEIGHT+10, cfg::freq());
-    print(pad1, TOP_HEIGHT+10, F(" M"));
-    int16_t pad2 = print(1, TOP_HEIGHT+10+pad1, image_scale_);
-    print(pad2+1, TOP_HEIGHT+15+pad2, F("x"));
+    print(pad1, TOP_HEIGHT+1, cfg::freq());
+
+    // Image scale
+    setTextColor(colorWhite());
+    pad1 = print(0, TOP_HEIGHT+11, F("S:"));
+    setTextColor(colorScale());
+    pad2 = print(pad1, TOP_HEIGHT+11, cfg::imgScale());
+    print(pad1+pad2, TOP_HEIGHT+11, F("x"));
+
+    // Gain
+    setTextColor(colorWhite());
+    pad1 = print(0, TOP_HEIGHT+21, F("G:"));
+    setTextColor(colorScale());
+    print(pad1, TOP_HEIGHT+21, (cfg::gain() * 100 / 255));
+
+    // Draw separator
+    drawFastHLine(4, 106, SIDE_WIDTH_LEFT-2*4, colorDarkGrey());
+
+    // Show "non-connected" initial serial states
+    setTextFont(fontContent());
+    setTextColor(colorRed());
+    print(0,  S_YPOS, F("S1"));
+    print(13, S_YPOS, F("S2"));
 
     return true;
 }

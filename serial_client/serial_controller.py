@@ -2,21 +2,23 @@ import numpy as np
 import time
 import random as rand
 import os
-
-from PIL import Image
 import serial_client as con
+
+from scipy import interpolate
+from PIL import Image
 from matplotlib import pyplot as plt
 
-CFG_FREQUENCY = 10 # Ultrasound probe operational frequency [MHz]
-CFG_IMG_SCALE = 1 # Linear amplification of image
-CFG_SAMP_RATE = 100 # Sampling frequency [MHz]
-CFG_NUM_PTS_GLOBAL = 200
-CFG_MIN_T = 0
-CFG_MAX_T = 200
-CFG_GAIN = 50
-CFG_SPEED_SOUND = 1550
-CFG_BSCAN_DP = True
-CFG_SELECT_PLANE = 40
+# Configuration
+CFG_FREQUENCY       = 10 # Ultrasound probe operational frequency [MHz]
+CFG_IMG_SCALE       = 1 # Linear amplification of image
+CFG_SAMP_RATE       = 100 # Sampling frequency [MHz]
+CFG_NUM_PTS_GLOBAL  = 200
+CFG_MIN_T           = 0
+CFG_MAX_T           = 200
+CFG_GAIN            = 50
+CFG_SPEED_SOUND     = 1550
+CFG_BSCAN_DP        = True
+CFG_SELECT_PLANE    = 40
 
 img_data = None
 

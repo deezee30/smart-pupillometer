@@ -15,8 +15,7 @@
 #define IMG_HEIGHT (SCREEN_WIDTH-TOP_HEIGHT)                        // longitudinal height (# rows)
 #define IMG_WIDTH  (SCREEN_HEIGHT-SIDE_WIDTH_LEFT-SIDE_WIDTH_RIGHT) // lateral width (# columns)
 // Positioning (Left Sidebar)
-#define S1_YPOS             100          // Programming USB port (S1) y positioning
-#define S2_YPOS             (S1_YPOS+10) // Native USB port (S2) y positioning
+#define S_YPOS              120 // S1 and S2 vertical positioning
 
 using Row       = Array<uint8_t, IMG_WIDTH>;
 using Column    = Array<uint8_t, IMG_HEIGHT>;

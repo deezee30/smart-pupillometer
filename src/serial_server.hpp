@@ -19,10 +19,6 @@ class SerialStream {
 
    private:
 
-    // Screen properties
-    uint8_t  s1_ypos_; // vertical position of "S1" mark on screen sidebar
-    uint8_t  s2_ypos_; // vertical position of "S2" mark on screen sidebar
-
     // USB ports
     uint32_t port_update_ = millis(); // last update time: used for caching
     uint8_t  status_      = STATUS_NOT_SETUP; // device functionality status
@@ -50,10 +46,8 @@ class SerialStream {
    public:
     Display* display_; // hardware display screen
 
-    SerialStream(Display* display, const uint8_t s1_ypos, const uint8_t s2_ypos) :
-        display_(display),
-        s1_ypos_(s1_ypos),
-        s2_ypos_(s2_ypos) {}
+    SerialStream(Display* display) :
+        display_(display) {}
     
     template <size_t N>
     Array<float, N> listen() {
@@ -146,7 +140,7 @@ class SerialStream {
                 port_prg_ = false;
                 if (update_display) {
                     display_->setTextColor(display_->colorRed());
-                    display_->print(1, s1_ypos_, F("S1")); // update serial status
+                    display_->print(0, S_YPOS, F("S1")); // update serial status
                     display_->clearInner(); // reset ultrasound image
                     display_->current_col = 0; // reset column counter
                 }
@@ -159,7 +153,7 @@ class SerialStream {
                 Serial << F("Found a new USB connection (S1)") << endl;
                 if (update_display) {
                     display_->setTextColor(display_->colorGreen());
-                    display_->print(1, s1_ypos_, F("S1")); // update serial status
+                    display_->print(0, S_YPOS, F("S1")); // update serial status
                     display_->clearInner(); // reset ultrasound image
                     display_->current_col = 0; // reset column counter
                 }
@@ -176,7 +170,7 @@ class SerialStream {
                 if (port_prg_) Serial << F("Native USB connection (S2) disconnected") << endl;
                 if (update_display) {
                     display_->setTextColor(display_->colorRed());
-                    display_->print(1, s2_ypos_, F("S2")); // update serial status
+                    display_->print(13, S_YPOS, F("S2")); // update serial status
                     display_->clearInner(); // reset ultrasound image
                     display_->current_col = 0; // reset column counter
                 }
@@ -190,7 +184,7 @@ class SerialStream {
                 if (port_prg_) Serial << F("Found a new native USB connection (S2)") << endl;
                 if (update_display) {
                     display_->setTextColor(display_->colorGreen());
-                    display_->print(1, s2_ypos_, F("S2")); // update serial status
+                    display_->print(13, S_YPOS, F("S2")); // update serial status
                     display_->clearInner(); // reset ultrasound image
                     display_->current_col = 0; // reset column counter
                 }
